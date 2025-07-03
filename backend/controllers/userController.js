@@ -3,12 +3,14 @@ import asyncHandler from 'express-async-handler'
  * become async, and wrapping them in the asyncHandler allows us to avoid
  * having to write try/catch blocks for error handling in each function
  */
+import User from '../models/userModel.js'
 
 // @desc Login user
 // @route GET /api/users
 // @access Public
 const loginUser = asyncHandler(async (req, res) => {
-  res.json({message: 'Login user'})
+  const users = await User.find()
+  res.status(400).json(users)
 })
 
 // @desc Register user
