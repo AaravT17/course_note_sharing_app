@@ -3,8 +3,11 @@ import dotenv from 'dotenv'
 dotenv.config() // Gives access to environment variables in .env file
 import userRouter from './routes/userRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
+import connectDB from './config/db.js'
 
 const port = process.env.PORT || 5000
+
+connectDB()
 
 const app = express()
 
