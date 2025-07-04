@@ -19,23 +19,23 @@ const loginUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
   if (!req.body.name) {
     res.status(400)
-    throw new Error("Please fill in the name field")
+    throw new Error('Please fill in the name field')
   }
-  res.json({message: 'Register user'})
+  res.json({ message: 'Register user' })
 })
 
 // @desc Update user
 // @route PUT /api/users/:id
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {
-  res.json({message: `Update user ${req.params.id}`})
+  res.json({ message: `Update user ${req.params.id}` })
 })
 
 // @desc Delete user
 // @route DELETE /api/users/:id
 // @access Private
 const deleteUser = asyncHandler(async (req, res) => {
-  res.json({message: `Delete user ${req.params.id}`})
+  res.json({ message: `Delete user ${req.params.id}` })
 })
 
 export { loginUser, registerUser, updateUser, deleteUser }

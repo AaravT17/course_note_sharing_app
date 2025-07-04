@@ -2,7 +2,7 @@ import express from 'express'
 import dotenv from 'dotenv'
 dotenv.config() // Gives access to environment variables in .env file
 import userRouter from './routes/userRoutes.js'
-import notesRouter from './routes/notesRoutes.js'
+import noteRouter from './routes/noteRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
 import connectDB from './config/db.js'
 
@@ -15,14 +15,14 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 app.use('/api/users', userRouter)
-app.use('/api/notes', notesRouter)
+app.use('/api/notes', noteRouter)
 
 app.use(errorHandler)
 
 async function main() {
-  await connectDB() 
+  await connectDB()
   // ensures DB connection is established before the server starts listening for requests
-  app.listen(port, () => console.log(`Server running on port ${port}...`)) 
+  app.listen(port, () => console.log(`Server running on port ${port}...`))
 }
 
 main()

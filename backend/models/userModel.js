@@ -1,23 +1,28 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
 const userSchema = mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Please add a name']
+      required: [true, 'Please add a name'],
     },
     email: {
       type: String,
       required: [true, 'Please add an email address'],
-      unique: true
-    }, 
+      unique: true,
+    },
     password: {
       type: String,
-      required: [true, 'Please add a password']
-    } // the password will be hashed
-  }, 
+      required: [true, 'Please add a password'],
+    }, // the password will be hashed
+    recentlyViewedNotes: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Note' }],
+      default: [],
+    },
+  },
   {
-    timestamps: true
-  })
+    timestamps: true,
+  }
+)
 
 export default mongoose.model('User', userSchema)
