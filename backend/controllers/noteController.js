@@ -5,7 +5,7 @@ import asyncHandler from 'express-async-handler'
  */
 import Note from '../models/noteModel.js'
 
-// @desc Get notes
+// @desc Get notes, optionally filter by university and course code
 // @route GET /api/notes
 // @access Private
 const getNotes = asyncHandler(async (req, res) => {
@@ -23,10 +23,10 @@ const getNotes = asyncHandler(async (req, res) => {
   res.status(200).json(notes)
 })
 
-// @desc Get note
+// @desc Get note, send the PDF to the client
 // @route GET /api/notes/:id
 // @access Private
-const getNoteById = asyncHandler(async (req, res) => {
+const getNote = asyncHandler(async (req, res) => {
   const note = Note.findById(req.params.id)
 
   if (!note) {
@@ -52,4 +52,4 @@ const updateNote = asyncHandler(async (req, res) => {})
 // @access Private
 const deleteNote = asyncHandler(async (req, res) => {})
 
-export { getNotes, getNoteById, uploadNote, updateNote, deleteNote }
+export { getNotes, getNote, uploadNote, updateNote, deleteNote }

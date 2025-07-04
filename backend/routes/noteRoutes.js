@@ -2,7 +2,7 @@ import express from 'express'
 
 import {
   getNotes,
-  getNoteById,
+  getNote,
   uploadNote,
   updateNote,
   deleteNote,
@@ -12,7 +12,7 @@ const router = express.Router()
 
 router.get('/', getNotes)
 
-router.get('/:id', getNoteById)
+router.get('/:id', getNote)
 
 router.post('/', uploadNote)
 

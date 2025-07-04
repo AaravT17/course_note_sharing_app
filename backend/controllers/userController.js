@@ -5,24 +5,29 @@ import asyncHandler from 'express-async-handler'
  */
 import User from '../models/userModel.js'
 
-// @desc Login user
-// @route GET /api/users
-// @access Public
-const loginUser = asyncHandler(async (req, res) => {})
-
 // @desc Register user
 // @route POST /api/users
 // @access Public
 const registerUser = asyncHandler(async (req, res) => {})
 
+// @desc Login user
+// @route POST /api/users/login
+// @access Public
+const loginUser = asyncHandler(async (req, res) => {})
+
+// @desc Get user data
+// @route GET /api/users/me
+// @access Private
+const getUser = asyncHandler(async (req, res) => {})
+
 // @desc Update user
-// @route PUT /api/users/:id
+// @route PUT /api/users/me
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {})
 
 // @desc Delete user
-// @route DELETE /api/users/:id
+// @route DELETE /api/users/me
 // @access Private
 const deleteUser = asyncHandler(async (req, res) => {})
 
-export { loginUser, registerUser, updateUser, deleteUser }
+export { registerUser, loginUser, getUser, updateUser, deleteUser }
