@@ -8,34 +8,21 @@ import User from '../models/userModel.js'
 // @desc Login user
 // @route GET /api/users
 // @access Public
-const loginUser = asyncHandler(async (req, res) => {
-  const users = await User.find()
-  res.status(400).json(users)
-})
+const loginUser = asyncHandler(async (req, res) => {})
 
 // @desc Register user
 // @route POST /api/users
 // @access Public
-const registerUser = asyncHandler(async (req, res) => {
-  if (!req.body.name) {
-    res.status(400)
-    throw new Error('Please fill in the name field')
-  }
-  res.json({ message: 'Register user' })
-})
+const registerUser = asyncHandler(async (req, res) => {})
 
 // @desc Update user
 // @route PUT /api/users/:id
 // @access Private
-const updateUser = asyncHandler(async (req, res) => {
-  res.json({ message: `Update user ${req.params.id}` })
-})
+const updateUser = asyncHandler(async (req, res) => {})
 
 // @desc Delete user
 // @route DELETE /api/users/:id
 // @access Private
-const deleteUser = asyncHandler(async (req, res) => {
-  res.json({ message: `Delete user ${req.params.id}` })
-})
+const deleteUser = asyncHandler(async (req, res) => {})
 
 export { loginUser, registerUser, updateUser, deleteUser }

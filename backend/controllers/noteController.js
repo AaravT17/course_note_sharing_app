@@ -10,19 +10,20 @@ import Note from '../models/noteModel.js'
 // @access Private
 const getNotes = asyncHandler(async (req, res) => {
   const query = {
-    ...(req.query.uni && {
-      university: { $regex: req.query.uni, $options: 'i' },
+    ...(req.query.university && {
+      university: { $regex: req.query.university, $options: 'i' },
     }),
-    ...(req.query.course && {
-      courseCode: { $regex: req.query.course, $options: 'i' },
+    ...(req.query.courseCode && {
+      courseCode: { $regex: req.query.courseCode, $options: 'i' },
     }),
   }
+
   const notes = Note.find(query)
 
   res.status(200).json(notes)
 })
 
-// @desc Get a note
+// @desc Get note
 // @route GET /api/notes/:id
 // @access Private
 const getNoteById = asyncHandler(async (req, res) => {
