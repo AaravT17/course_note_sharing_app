@@ -21,7 +21,7 @@ app.use(errorHandler)
 
 async function main() {
   await connectDB()
-  // ensures DB connection is established before the server starts listening for requests
+  // Ensures DB connection is established before the server starts listening for requests
   app.listen(port, () => console.log(`Server running on port ${port}...`))
 }
 
