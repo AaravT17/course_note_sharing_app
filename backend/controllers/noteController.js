@@ -9,47 +9,55 @@ import Note from '../models/noteModel.js'
 // @route GET /api/notes
 // @access Private
 const getNotes = asyncHandler(async (req, res) => {
-  const query = {
-    ...(req.query.university && {
-      university: { $regex: req.query.university, $options: 'i' },
-    }),
-    ...(req.query.courseCode && {
-      courseCode: { $regex: req.query.courseCode, $options: 'i' },
-    }),
-  }
+  // const query = {
+  //   ...(req.query.university && {
+  //     university: { $regex: req.query.university, $options: 'i' },
+  //   }),
+  //   ...(req.query.courseCode && {
+  //     courseCode: { $regex: req.query.courseCode, $options: 'i' },
+  //   }),
+  // }
 
-  const notes = Note.find(query)
+  // const notes = Note.find(query)
 
-  res.status(200).json(notes)
+  // res.status(200).json(notes)
+  res.json({ message: 'Get notes' })
 })
 
 // @desc Get note, send the PDF to the client
 // @route GET /api/notes/:id
 // @access Private
 const getNote = asyncHandler(async (req, res) => {
-  const note = Note.findById(req.params.id)
+  // const note = Note.findById(req.params.id)
 
-  if (!note) {
-    res.status(400)
-    throw new Error('Invalid ID')
-  }
+  // if (!note) {
+  //   res.status(400)
+  //   throw new Error('Invalid ID')
+  // }
 
-  res.status(200).json(note)
+  // res.status(200).json(note)
+  res.json({ message: 'Get note by ID' })
 })
 
 // @desc Upload note
 // @route POST /api/notes
 // @access Private
-const uploadNote = asyncHandler(async (req, res) => {})
+const uploadNote = asyncHandler(async (req, res) => {
+  res.json({ message: 'Upload note' })
+})
 
 // @desc Update note
 // @route PUT /api/notes/:id
 // @access Private
-const updateNote = asyncHandler(async (req, res) => {})
+const updateNote = asyncHandler(async (req, res) => {
+  res.json({ message: 'Update note' })
+})
 
 // @desc Delete note
 // @route DELETE /api/notes/:id
 // @access Private
-const deleteNote = asyncHandler(async (req, res) => {})
+const deleteNote = asyncHandler(async (req, res) => {
+  res.json({ message: 'Delete note' })
+})
 
 export { getNotes, getNote, uploadNote, updateNote, deleteNote }

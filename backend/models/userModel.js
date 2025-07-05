@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const userSchema = mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -15,8 +15,25 @@ const userSchema = mongoose.Schema(
       type: String,
       required: [true, 'Please add a password'],
     }, // the password will be hashed
-    recentlyViewedNotes: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Note' }],
+    recentNotes: {
+      type: [
+        new mongoose.Schema(
+          {
+            id: {
+              type: mongoose.Schema.Types.ObjectId,
+              required: true,
+              ref: 'Note',
+            },
+            title: {
+              type: String,
+              required: true,
+            },
+          },
+          {
+            _id: false,
+          }
+        ),
+      ],
       default: [],
     },
   },
