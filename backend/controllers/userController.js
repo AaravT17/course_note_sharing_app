@@ -3,9 +3,9 @@ import asyncHandler from 'express-async-handler'
  * become async, and wrapping them in the asyncHandler allows us to avoid
  * having to write try/catch blocks for error handling in each function
  */
-import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import User from '../models/userModel.js'
+import { generateToken, isStrongPassword } from '../utils/userUtils.js'
 
 // @desc Register user
 // @route POST /api/users
@@ -28,7 +28,14 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('Passwords do not match')
   }
 
-  // TODO: Add some more checks for validity of email, strength of password
+  if (!isStrongPassword(password)) {
+    res.status(400)
+    throw new Error(
+      'Password must be at least 12 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character'
+    )
+  }
+
+  // TODO: Add some more checks for validity of email
 
   /* All checks complete, input data is valid, we can register the user
    * We need not manually check whether there already exists a user with
@@ -51,7 +58,8 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user.id,
       name: user.name,
       email: user.email,
-      token: _generateToken(user.id),
+      recentNotes: user.recentNotes,
+      token: generateToken(user.id),
     })
   } catch (error) {
     if (error.code && error.code === 11000) {
@@ -91,7 +99,8 @@ const loginUser = asyncHandler(async (req, res) => {
     _id: user.id,
     name: user.name,
     email: user.email,
-    token: _generateToken(user.id),
+    recentNotes: user.recentNotes,
+    token: generateToken(user.id),
   })
 })
 
@@ -99,27 +108,38 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route GET /api/users/me
 // @access Private
 const getUser = asyncHandler(async (req, res) => {
-  res.json({ message: 'Get user' })
+  res.status(200)
+  res.json({
+    _id: req.user.id,
+    name: req.user.name,
+    email: req.user.email,
+    recentNotes: req.user.recentNotes,
+  })
 })
 
 // @desc Update user
 // @route PUT /api/users/me
 // @access Private
-const updateUser = asyncHandler(async (req, res) => {
-  res.json({ message: 'Update user' })
-})
+const updateUser = asyncHandler(async (req, res) => {})
 
 // @desc Delete user
 // @route DELETE /api/users/me
 // @access Private
-const deleteUser = asyncHandler(async (req, res) => {
-  res.json({ message: 'Delete user' })
+const deleteUser = asyncHandler(async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id)
+    if (!user) {
+      res.status(404)
+      return next(new Error('User not found'))
+    }
+    res.status(204).end()
+  } catch (error) {
+    console.log(error)
+    if (error.name === 'CastError') {
+      res.status(400)
+    }
+    throw error
+  }
 })
-
-const _generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  })
-}
 
 export { registerUser, loginUser, getUser, updateUser, deleteUser }

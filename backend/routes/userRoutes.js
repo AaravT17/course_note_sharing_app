@@ -1,5 +1,4 @@
 import express from 'express'
-
 import {
   registerUser,
   loginUser,
@@ -7,6 +6,7 @@ import {
   updateUser,
   deleteUser,
 } from '../controllers/userController.js'
+import { protectRoute } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
@@ -14,10 +14,10 @@ router.post('/', registerUser)
 
 router.post('/login', loginUser)
 
-router.get('/me', getUser)
+router.get('/me', protectRoute, getUser)
 
-router.put('/me', updateUser)
+router.put('/me', protectRoute, updateUser)
 
-router.delete('/me', deleteUser)
+router.delete('/me', protectRoute, deleteUser)
 
 export default router
