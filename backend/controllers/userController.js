@@ -53,8 +53,7 @@ const registerUser = asyncHandler(async (req, res) => {
       password: hashedPassword,
     })
 
-    res.status(201)
-    res.json({
+    res.status(201).json({
       _id: user.id,
       name: user.name,
       email: user.email,
@@ -86,7 +85,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Missing fields')
   }
 
-  const user = User.findOne({ email })
+  const user = await User.findOne({ email })
 
   if (!(user && (await bcrypt.compare(password, user.password)))) {
     res.status(401)
@@ -94,8 +93,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   // All checks complete, input data is valid, we can login the user
-  res.status(200)
-  res.json({
+  res.status(200).json({
     _id: user.id,
     name: user.name,
     email: user.email,
@@ -108,8 +106,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route GET /api/users/me
 // @access Private
 const getUser = asyncHandler(async (req, res) => {
-  res.status(200)
-  res.json({
+  res.status(200).json({
     _id: req.user.id,
     name: req.user.name,
     email: req.user.email,
@@ -120,7 +117,29 @@ const getUser = asyncHandler(async (req, res) => {
 // @desc Update user
 // @route PUT /api/users/me
 // @access Private
-const updateUser = asyncHandler(async (req, res) => {})
+const updateUser = asyncHandler(async (req, res) => {
+  if (!req.body) {
+    res.status(400)
+    throw new Error('Missing fields')
+  }
+  if (req.body.recentNotes) req.user.recentNotes = req.body.recentNotes
+  try {
+    const updatedUser = await req.user.save()
+    res.status(200).json({
+      _id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      recentNotes: updatedUser.recentNotes,
+    })
+  } catch (error) {
+    console.log(error)
+    if (error.name === 'CastError' || error.name === 'ValidationError') {
+      res.status(400)
+      throw new Error('Bad request')
+    }
+    throw error
+  }
+})
 
 // @desc Delete user
 // @route DELETE /api/users/me
@@ -135,9 +154,7 @@ const deleteUser = asyncHandler(async (req, res, next) => {
     res.status(204).end()
   } catch (error) {
     console.log(error)
-    if (error.name === 'CastError') {
-      res.status(400)
-    }
+    if (error.name === 'CastError') res.status(400)
     throw error
   }
 })
