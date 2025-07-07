@@ -57,7 +57,7 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user.id,
       name: user.name,
       email: user.email,
-      recentNotes: user.recentNotes,
+      recentlyViewedNotes: user.recentlyViewedNotes,
       token: generateToken(user.id),
     })
   } catch (error) {
@@ -97,39 +97,40 @@ const loginUser = asyncHandler(async (req, res) => {
     _id: user.id,
     name: user.name,
     email: user.email,
-    recentNotes: user.recentNotes,
+    recentlyViewedNotes: user.recentlyViewedNotes,
     token: generateToken(user.id),
   })
 })
 
-// @desc Get user data
+// @desc Get current user's data
 // @route GET /api/users/me
 // @access Private
-const getUser = asyncHandler(async (req, res) => {
+const getMe = asyncHandler(async (req, res) => {
   res.status(200).json({
     _id: req.user.id,
     name: req.user.name,
     email: req.user.email,
-    recentNotes: req.user.recentNotes,
+    recentlyViewedNotes: req.user.recentlyViewedNotes,
   })
 })
 
-// @desc Update user
+// @desc Update current user's data
 // @route PUT /api/users/me
 // @access Private
-const updateUser = asyncHandler(async (req, res) => {
+const updateMe = asyncHandler(async (req, res) => {
   if (!req.body) {
     res.status(400)
     throw new Error('Missing fields')
   }
-  if (req.body.recentNotes) req.user.recentNotes = req.body.recentNotes
+  if (req.body.recentlyViewedNotes)
+    req.user.recentlyViewedNotes = req.body.recentlyViewedNotes
   try {
     const updatedUser = await req.user.save()
     res.status(200).json({
       _id: updatedUser.id,
       name: updatedUser.name,
       email: updatedUser.email,
-      recentNotes: updatedUser.recentNotes,
+      recentlyViewedNotes: updatedUser.recentlyViewedNotes,
     })
   } catch (error) {
     console.log(error)
@@ -139,14 +140,16 @@ const updateUser = asyncHandler(async (req, res) => {
     }
     throw error
   }
+
+  // TODO: Add update password functionality
 })
 
-// @desc Delete user
+// @desc Delete current user
 // @route DELETE /api/users/me
 // @access Private
-const deleteUser = asyncHandler(async (req, res, next) => {
+const deleteMe = asyncHandler(async (req, res, next) => {
   try {
-    const user = await User.findByIdAndDelete(req.user.id)
+    const user = await User.findByIdAndDelete(req.user._id)
     if (!user) {
       res.status(404)
       return next(new Error('User not found'))
@@ -159,4 +162,4 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   }
 })
 
-export { registerUser, loginUser, getUser, updateUser, deleteUser }
+export { registerUser, loginUser, getMe, updateMe, deleteMe }

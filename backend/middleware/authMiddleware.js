@@ -4,7 +4,7 @@ import User from '../models/userModel.js'
 
 // TODO: Change authentication from access tokens to access + refresh tokens
 
-const protectRoute = asyncHandler(async (req, res, next) => {
+const authenticateUser = asyncHandler(async (req, res, next) => {
   let token
   if (
     req.headers.authorization &&
@@ -35,4 +35,4 @@ const protectRoute = asyncHandler(async (req, res, next) => {
   }
 })
 
-export { protectRoute }
+export { authenticateUser }

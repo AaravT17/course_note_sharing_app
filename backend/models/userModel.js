@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a password'],
     }, // This is the hashed password
-    recentNotes: {
+    recentlyViewedNotes: {
       type: [
         new mongoose.Schema(
           {

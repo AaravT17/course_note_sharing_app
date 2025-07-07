@@ -19,7 +19,12 @@ const noteSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // For storage, file name will be generated as <userId>_<title>_<uploadedAt>.pdf
+    uuid: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    // For storage, file name will be generated as <userId>_<title>_<uuid>.pdf
     // This should ensure that no naming collisions occur
   },
   {

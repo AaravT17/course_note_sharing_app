@@ -1,23 +1,38 @@
 import express from 'express'
-
+import multer from 'multer'
+import path from 'path'
 import {
-  getNotes,
-  getNote,
-  uploadNote,
-  updateNote,
-  deleteNote,
+  getNotesMetadata,
+  getNoteFile,
+  uploadNotes,
 } from '../controllers/noteController.js'
+import { storage } from '../config/upload.js'
+import { authenticateUser } from '../middleware/authMiddleware.js'
+import { MAX_FILE_SIZE_MB, MAX_FILES } from '../config/constants.js'
 
 const router = express.Router()
 
-router.get('/', getNotes)
+const upload = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!req.body || !req.body.university || !req.body.courseCode) {
+      return cb(new Error('Missing fields'))
+    }
+    if (
+      path.extname(file.originalname).toLowerCase().trim() !== '.pdf' ||
+      file.mimetype !== 'application/pdf'
+    ) {
+      return cb(new Error('Invalid file format'))
+    }
+    cb(null, true)
+  },
+})
 
-router.get('/:id', getNote)
+router.get('/', authenticateUser, getNotesMetadata)
 
-router.post('/', uploadNote)
+router.get('/:id/view', authenticateUser, getNoteFile)
 
-router.put('/:id', updateNote)
-
-router.delete('/:id', deleteNote)
+router.post('/', authenticateUser, upload.array('note', MAX_FILES), uploadNotes)
 
 export default router
