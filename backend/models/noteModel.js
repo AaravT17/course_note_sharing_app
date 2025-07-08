@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 const noteSchema = new mongoose.Schema(
   {
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'User',
@@ -24,7 +24,7 @@ const noteSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // For storage, file name will be generated as <userId>_<title>_<uuid>.pdf
+    // For storage, file name will be generated as <user>_<title>_<uuid>.pdf
     // This should ensure that no naming collisions occur
   },
   {

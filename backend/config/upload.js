@@ -6,13 +6,20 @@ import { getStorageFileName } from '../utils/noteUtils.js'
 const storage = multer.diskStorage({
   destination: path.resolve('uploads'),
   filename: (req, file, cb) => {
-    const userId = req.user._id
+    const user = req.user._id
     const title = path
       .basename(file.originalname, path.extname(file.originalname))
       .trim()
     const uuid = uuidv4()
     // Ensures unique file names
-    cb(null, getStorageFileName(userId.toString(), title, uuid))
+    cb(
+      null,
+      getStorageFileName({
+        user,
+        title,
+        uuid,
+      })
+    )
   },
 })
 
