@@ -20,10 +20,10 @@ import {
 const getNotesMetadata = asyncHandler(async (req, res) => {
   const query = {
     ...(req.query.university && {
-      university: { $regex: req.query.university, $options: 'i' },
+      university: { $regex: req.query.university.trim(), $options: 'i' },
     }),
     ...(req.query.courseCode && {
-      courseCode: { $regex: req.query.courseCode, $options: 'i' },
+      courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
   }
 
@@ -91,8 +91,8 @@ const uploadNotes = asyncHandler(async (req, res) => {
     try {
       const note = await Note.create({
         user: req.user._id,
-        university: req.body.university.trim(),
-        courseCode: req.body.courseCode.trim(),
+        university: req.body.university,
+        courseCode: req.body.courseCode,
         title,
         uuid,
       })
@@ -131,10 +131,10 @@ const getMyNotes = asyncHandler(async (req, res) => {
   const query = {
     user: req.user._id,
     ...(req.query.university && {
-      university: { $regex: req.query.university, $options: 'i' },
+      university: { $regex: req.query.university.trim(), $options: 'i' },
     }),
     ...(req.query.courseCode && {
-      courseCode: { $regex: req.query.courseCode, $options: 'i' },
+      courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
   }
   const notes = await Note.find(query).sort({
@@ -161,7 +161,8 @@ const updateMyNote = asyncHandler(async (req, res) => {
     }
 
     if (req.body.university) note.university = req.body.university.trim()
-    if (req.body.courseCode) note.courseCode = req.body.courseCode.trim()
+    if (req.body.courseCode)
+      note.courseCode = req.body.courseCode.trim().toUpperCase()
 
     const updatedNote = await note.save()
 

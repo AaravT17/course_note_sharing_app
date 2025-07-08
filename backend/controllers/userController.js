@@ -23,6 +23,11 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('Missing fields')
   }
 
+  name = name.trim()
+  email = email.trim().toLowerCase()
+  password = password.trim()
+  confirmPassword = confirmPassword.trim()
+
   if (password !== confirmPassword) {
     res.status(400)
     throw new Error('Passwords do not match')
@@ -54,7 +59,7 @@ const registerUser = asyncHandler(async (req, res) => {
     })
 
     res.status(201).json({
-      _id: user.id,
+      _id: user._id,
       name: user.name,
       email: user.email,
       recentlyViewedNotes: user.recentlyViewedNotes,
@@ -85,6 +90,9 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Missing fields')
   }
 
+  email = email.trim().toLowerCase()
+  password = password.trim()
+
   const user = await User.findOne({ email })
 
   if (!(user && (await bcrypt.compare(password, user.password)))) {
@@ -94,7 +102,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // All checks complete, input data is valid, we can login the user
   res.status(200).json({
-    _id: user.id,
+    _id: user._id,
     name: user.name,
     email: user.email,
     recentlyViewedNotes: user.recentlyViewedNotes,
@@ -107,7 +115,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // @access Private
 const getMe = asyncHandler(async (req, res) => {
   res.status(200).json({
-    _id: req.user.id,
+    _id: req.user._id,
     name: req.user.name,
     email: req.user.email,
     recentlyViewedNotes: req.user.recentlyViewedNotes,
@@ -127,7 +135,7 @@ const updateMe = asyncHandler(async (req, res) => {
   try {
     const updatedUser = await req.user.save()
     res.status(200).json({
-      _id: updatedUser.id,
+      _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
       recentlyViewedNotes: updatedUser.recentlyViewedNotes,

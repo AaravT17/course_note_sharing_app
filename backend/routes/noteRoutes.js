@@ -19,6 +19,10 @@ const upload = multer({
     if (!req.body || !req.body.university || !req.body.courseCode) {
       return cb(new Error('Missing fields'))
     }
+
+    req.body.university = req.body.university.trim()
+    req.body.courseCode = req.body.courseCode.trim().toUpperCase()
+
     if (
       path.extname(file.originalname).toLowerCase().trim() !== '.pdf' ||
       file.mimetype !== 'application/pdf'
