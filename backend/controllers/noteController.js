@@ -12,6 +12,8 @@ import {
   deleteFileAndNote,
 } from '../utils/noteUtils.js'
 
+// TODO: Modify uploadNotes and getNoteFile to store and retrieve files from AWS instance
+
 // @desc Get notes metadata, optionally filter/search by university and/or course code
 // @route GET /api/notes
 // @access Private
@@ -46,7 +48,11 @@ const getNoteFile = asyncHandler(async (req, res) => {
       res.status(404)
       throw new Error('File not found')
     }
-    const filePath = path.resolve('uploads', getStorageFileName(note))
+    const filePath = path.resolve(
+      'backend',
+      'uploads',
+      getStorageFileName(note)
+    )
     if (!fs.existsSync(filePath)) {
       console.log(`File ${getStorageFileName(note)} not found in storage`)
       res.status(404)
@@ -92,6 +98,11 @@ const uploadNotes = asyncHandler(async (req, res) => {
       })
       savedNotes.push(note)
     } catch (error) {
+      let message
+      if (error.code && error.code === 11000) {
+        message =
+          'Something went wrong while uploading your notes, please try again'
+      }
       console.log(error)
       await deleteFile({
         user: req.user._id,
@@ -103,7 +114,11 @@ const uploadNotes = asyncHandler(async (req, res) => {
       // }
       await Promise.allSettled(savedNotes.map(deleteFileAndNote))
       // Optimized for efficiency
-      throw error
+      if (message) {
+        throw new Error(message)
+      } else {
+        throw error
+      }
     }
   }
   res.status(201).json(savedNotes)

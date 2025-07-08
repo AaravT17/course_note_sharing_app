@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { getStorageFileName } from '../utils/noteUtils.js'
 
 const storage = multer.diskStorage({
-  destination: path.resolve('uploads'),
+  destination: path.resolve('backend', 'uploads'),
   filename: (req, file, cb) => {
     const user = req.user._id
     const title = path

@@ -22,7 +22,7 @@ app.use('/api/notes', noteRouter)
 app.use(errorHandler)
 
 async function main() {
-  const uploadsDir = path.resolve('uploads')
+  const uploadsDir = path.resolve('backend', 'uploads')
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir)
   }

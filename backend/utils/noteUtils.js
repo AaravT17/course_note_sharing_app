@@ -1,3 +1,6 @@
+import { promises as fs } from 'fs'
+import path from 'path'
+
 const _slugify = (title) => {
   return title
     .trim()
@@ -16,7 +19,9 @@ const getStorageFileName = (note) => {
 // Helper functions for handling cleanup following a failed upload
 const deleteFile = async (note) => {
   try {
-    await fs.unlink(path.resolve('uploads', getStorageFileName(note)))
+    await fs.unlink(
+      path.resolve('backend', 'uploads', getStorageFileName(note))
+    )
   } catch (error) {
     console.log(
       `Could not delete file ${getStorageFileName(note)} from storage`,
@@ -27,7 +32,9 @@ const deleteFile = async (note) => {
 
 const deleteFileAndNote = async (note) => {
   try {
-    await fs.unlink(path.resolve('uploads', getStorageFileName(note)))
+    await fs.unlink(
+      path.resolve('backend', 'uploads', getStorageFileName(note))
+    )
   } catch (error) {
     console.log(
       `Could not delete file ${getStorageFileName(note)} from storage`,
