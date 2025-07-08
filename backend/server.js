@@ -1,6 +1,8 @@
 import express from 'express'
 import dotenv from 'dotenv'
 dotenv.config() // Gives access to environment variables in .env file
+import fs from 'fs'
+import path from 'path'
 import userRouter from './routes/userRoutes.js'
 import noteRouter from './routes/noteRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
@@ -20,6 +22,10 @@ app.use('/api/notes', noteRouter)
 app.use(errorHandler)
 
 async function main() {
+  const uploadsDir = path.resolve('uploads')
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir)
+  }
   await connectDB()
   // Ensures DB connection is established before the server starts listening for requests
   app.listen(port, () => console.log(`Server running on port ${port}...`))
