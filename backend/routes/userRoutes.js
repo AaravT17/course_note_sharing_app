@@ -1,6 +1,7 @@
 import express from 'express'
 import {
   registerUser,
+  verifyUser,
   loginUser,
   getMe,
   updateMe,
@@ -16,6 +17,8 @@ import { authenticateUser } from '../middleware/authMiddleware.js'
 const router = express.Router()
 
 router.post('/', registerUser)
+
+router.get('/verify', verifyUser)
 
 router.post('/login', loginUser)
 

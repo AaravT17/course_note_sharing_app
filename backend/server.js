@@ -3,10 +3,12 @@ import dotenv from 'dotenv'
 dotenv.config() // Gives access to environment variables in .env file
 import fs from 'fs'
 import path from 'path'
+import cron from 'node-cron'
 import userRouter from './routes/userRoutes.js'
 import noteRouter from './routes/noteRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
 import connectDB from './config/db.js'
+import { deleteUnverifiedUsers } from './utils/cleanup.js'
 
 const port = process.env.PORT || 5000
 
@@ -28,6 +30,8 @@ async function main() {
   }
   await connectDB()
   // Ensures DB connection is established before the server starts listening for requests
+  cron.schedule('0 0 * * *', deleteUnverifiedUsers)
+  console.log('Cleanup process active...')
   app.listen(port, () => console.log(`Server running on port ${port}...`))
 }
 

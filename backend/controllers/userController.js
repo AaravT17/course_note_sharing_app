@@ -4,29 +4,35 @@ import asyncHandler from 'express-async-handler'
  * having to write try/catch blocks for error handling in each function
  */
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import User from '../models/userModel.js'
-import { generateToken, isStrongPassword } from '../utils/userUtils.js'
+import {
+  generateToken,
+  isStrongPassword,
+  hashVerificationToken,
+  sendVerificationEmail,
+} from '../utils/userUtils.js'
+import { VERIFICATION_LINK_EXPIRY_HRS } from '../config/constants.js'
 
-// @desc Register user
+// @desc Register user, pending verification
 // @route POST /api/users
 // @access Public
 const registerUser = asyncHandler(async (req, res) => {
-  if (!req.body) {
+  if (
+    !req.body ||
+    !req.body.name ||
+    !req.body.email ||
+    !req.body.password ||
+    !req.body.confirmPassword
+  ) {
     res.status(400)
     throw new Error('Missing fields')
   }
 
-  const { name, email, password, confirmPassword } = req.body
-
-  if (!name || !email || !password || !confirmPassword) {
-    res.status(400)
-    throw new Error('Missing fields')
-  }
-
-  name = name.trim()
-  email = email.trim().toLowerCase()
-  password = password.trim()
-  confirmPassword = confirmPassword.trim()
+  const name = req.body.name.trim()
+  const email = req.body.email.trim().toLowerCase()
+  const password = req.body.password.trim()
+  const confirmPassword = req.body.confirmPassword.trim()
 
   if (password !== confirmPassword) {
     res.status(400)
@@ -40,8 +46,6 @@ const registerUser = asyncHandler(async (req, res) => {
     )
   }
 
-  // TODO: Add email validation
-
   /* All checks complete, input data is valid, we can register the user
    * We need not manually check whether there already exists a user with
    * the same email, MongoDB does this for us
@@ -51,21 +55,27 @@ const registerUser = asyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10)
   const hashedPassword = await bcrypt.hash(password, salt)
 
+  const token = crypto.randomBytes(32).toString('hex')
+
+  const hashedToken = hashVerificationToken(token)
+
   try {
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
+      verificationToken: hashedToken,
+      verificationTokenExpiry:
+        Date.now() + 1000 * 60 * 60 * VERIFICATION_LINK_EXPIRY_HRS,
     })
 
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      recentlyViewedNotes: user.recentlyViewedNotes,
-      // at this point, recentlyViewedNotes will be empty, no need to populate
-      token: generateToken(user.id),
-    })
+    const verificationLink = `${
+      process.env.BACKEND_BASE_URL
+    }/api/users/verify?userId=${user._id.toString()}&token=${token}`
+
+    await sendVerificationEmail(email, verificationLink)
+
+    res.status(201).end()
   } catch (error) {
     if (error.code && error.code === 11000) {
       res.status(409)
@@ -75,30 +85,99 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc Verify user
+// @route GET /api/users/verify
+// @access Public
+const verifyUser = asyncHandler(async (req, res) => {
+  // TODO: Change all responses to redirect the user to the login page upon
+  // success or in case the user's account has already been verified, or to a
+  // 'Something went wrong' page with an appropriate message in case of an error
+  if (!req.query || !req.query.userId || !req.query.token) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  const user = await User.findById(req.query.userId.trim())
+
+  if (!user) {
+    res.status(400)
+    throw new Error('User not found')
+  }
+
+  if (user.isVerified) {
+    res.status(400)
+    throw new Error('Email has already been verified')
+  }
+
+  if (!user.verificationToken) {
+    try {
+      await user.deleteOne()
+    } catch (error) {
+      console.log(`Could not delete user ${user._id.toString()}`)
+    }
+    res.status(400)
+    throw new Error(
+      'Something went wrong while registering your account, please re-register your account'
+    )
+  }
+
+  const hashedToken = hashVerificationToken(req.query.token.trim())
+
+  if (hashedToken !== user.verificationToken) {
+    try {
+      await user.deleteOne()
+    } catch (error) {
+      console.log(`Could not delete user ${user._id.toString()}`)
+    }
+    res.status(400)
+    throw new Error(
+      'Invalid verification link, please re-register your account'
+    )
+  }
+
+  if (user.verificationTokenExpiry < Date.now()) {
+    try {
+      await user.deleteOne()
+    } catch (error) {
+      console.log(`Could not delete user ${user._id.toString()}`)
+    }
+    res.status(400)
+    throw new Error(
+      'Verification link has expired, please re-register your account'
+    )
+  }
+
+  user.isVerified = true
+  user.verificationToken = undefined
+  user.verificationTokenExpiry = undefined
+  await user.save()
+  res.status(200).json({
+    message: 'Your email has been verified',
+  })
+})
+
 // @desc Login user
 // @route POST /api/users/login
 // @access Public
 const loginUser = asyncHandler(async (req, res) => {
-  if (!req.body) {
+  if (!req.body || !req.body.email || !req.body.password) {
     res.status(400)
     throw new Error('Missing fields')
   }
 
-  const { email, password } = req.body
-
-  if (!email || !password) {
-    res.status(400)
-    throw new Error('Missing fields')
-  }
-
-  email = email.trim().toLowerCase()
-  password = password.trim()
+  const email = req.body.email.trim().toLowerCase()
+  const password = req.body.password.trim()
 
   const user = await User.findOne({ email })
 
   if (!(user && (await bcrypt.compare(password, user.password)))) {
     res.status(401)
     throw new Error('Invalid credentials')
+  }
+
+  if (!user.isVerified) {
+    res.status(403)
+    throw new Error('Please verify your email before logging in')
   }
 
   /* Populate the user's recentlyViewedNotes to get the actual note objects and
@@ -198,4 +277,4 @@ const deleteMe = asyncHandler(async (req, res, next) => {
   }
 })
 
-export { registerUser, loginUser, getMe, updateMe, deleteMe }
+export { registerUser, verifyUser, loginUser, getMe, updateMe, deleteMe }

@@ -1,4 +1,5 @@
 import mongoose, { Mongoose } from 'mongoose'
+import { VERIFICATION_LINK_EXPIRY_HRS } from '../config/constants.js'
 
 const userSchema = new mongoose.Schema(
   {
@@ -25,9 +26,21 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+    },
+    verificationTokenExpiry: {
+      type: Date,
+      default: () => Date.now() + 1000 * 60 * 60 * VERIFICATION_LINK_EXPIRY_HRS,
+    },
   },
   {
     timestamps: true,
+    minimize: true,
   }
 )
 
