@@ -40,7 +40,7 @@ const registerUser = asyncHandler(async (req, res) => {
     )
   }
 
-  // TODO: Add some more checks for validity of email
+  // TODO: Add email validation
 
   /* All checks complete, input data is valid, we can register the user
    * We need not manually check whether there already exists a user with
@@ -63,6 +63,7 @@ const registerUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       recentlyViewedNotes: user.recentlyViewedNotes,
+      // at this point, recentlyViewedNotes will be empty, no need to populate
       token: generateToken(user.id),
     })
   } catch (error) {
@@ -100,12 +101,26 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Invalid credentials')
   }
 
+  /* Populate the user's recentlyViewedNotes to get the actual note objects and
+   * send those back to the client, and in the DB, update the field to store
+   * only the IDs of the notes that still exist (those that are missing from the
+   * populated list have likely been deleted)
+   */
+
+  await user.populate('recentlyViewedNotes')
+
+  const notes = user.recentlyViewedNotes
+
+  user.recentlyViewedNotes = notes.map((note) => note._id)
+
+  await user.save()
+
   // All checks complete, input data is valid, we can login the user
   res.status(200).json({
     _id: user._id,
     name: user.name,
     email: user.email,
-    recentlyViewedNotes: user.recentlyViewedNotes,
+    recentlyViewedNotes: notes,
     token: generateToken(user.id),
   })
 })
@@ -114,11 +129,19 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route GET /api/users/me
 // @access Private
 const getMe = asyncHandler(async (req, res) => {
+  await req.user.populate('recentlyViewedNotes')
+
+  const notes = req.user.recentlyViewedNotes
+
+  req.user.recentlyViewedNotes = notes.map((note) => note._id)
+
+  await req.user.save()
+
   res.status(200).json({
     _id: req.user._id,
     name: req.user.name,
     email: req.user.email,
-    recentlyViewedNotes: req.user.recentlyViewedNotes,
+    recentlyViewedNotes: notes,
   })
 })
 
@@ -130,15 +153,20 @@ const updateMe = asyncHandler(async (req, res) => {
     res.status(400)
     throw new Error('Missing fields')
   }
-  if (req.body.recentlyViewedNotes)
+  if (req.body.recentlyViewedNotes) {
+    // req.body.recentlyViewedNotes would be an array of note IDs
     req.user.recentlyViewedNotes = req.body.recentlyViewedNotes
+  }
   try {
+    await req.user.populate('recentlyViewedNotes')
+    const notes = req.user.recentlyViewedNotes
+    req.user.recentlyViewedNotes = notes.map((note) => note._id)
     const updatedUser = await req.user.save()
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
-      recentlyViewedNotes: updatedUser.recentlyViewedNotes,
+      recentlyViewedNotes: notes,
     })
   } catch (error) {
     console.log(error)
@@ -148,9 +176,9 @@ const updateMe = asyncHandler(async (req, res) => {
     }
     throw error
   }
-
-  // TODO: Add update password functionality
 })
+
+// TODO: Add forgot password functionality
 
 // @desc Delete current user
 // @route DELETE /api/users/me
