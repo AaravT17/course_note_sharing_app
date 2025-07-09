@@ -1,6 +1,9 @@
 import { promises as fs } from 'fs'
 import path from 'path'
+import Note from '../models/noteModel.js'
 
+// Helper functions for creating file names for storage and extract information
+// from files for storage in DB
 const _slugify = (title) => {
   return title
     .trim()
@@ -11,9 +14,15 @@ const _slugify = (title) => {
 }
 
 const getStorageFileName = (note) => {
-  return `${note.user.toString()}_${_slugify(note.title).slice(0, 50)}_${
-    note.uuid
-  }.pdf`
+  return `${note.uuid}.pdf`.trim()
+}
+
+const getUuid = (storageFileName) => {
+  return storageFileName.slice(0, storageFileName.lastIndexOf('.')).trim()
+}
+
+const getTitle = (originalFileName) => {
+  path.basename(originalFileName, path.extname(originalFileName)).trim()
 }
 
 // Helper functions for handling cleanup following a failed upload
@@ -48,4 +57,4 @@ const deleteFileAndNote = async (note) => {
   }
 }
 
-export { getStorageFileName, deleteFile, deleteFileAndNote }
+export { getStorageFileName, getUuid, getTitle, deleteFile, deleteFileAndNote }

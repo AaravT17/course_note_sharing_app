@@ -4,8 +4,8 @@ const noteSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
       ref: 'User',
+      required: true,
     },
     university: {
       type: String,
@@ -24,7 +24,7 @@ const noteSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // For storage, file name will be generated as <user>_<title>_<uuid>.pdf
+    // For storage, file name will be generated as <uuid>.pdf
     // This should ensure that no naming collisions occur
   },
   {

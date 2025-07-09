@@ -8,6 +8,8 @@ import fs from 'fs'
 import Note from '../models/noteModel.js'
 import {
   getStorageFileName,
+  getUuid,
+  getTitle,
   deleteFile,
   deleteFileAndNote,
 } from '../utils/noteUtils.js'
@@ -81,13 +83,8 @@ const uploadNotes = asyncHandler(async (req, res) => {
   let savedNotes = []
 
   for (const file of req.files) {
-    const title = path
-      .basename(file.originalname, path.extname(file.originalname))
-      .trim()
-    const uuid = file.filename.slice(
-      file.filename.lastIndexOf('_') + 1,
-      file.filename.lastIndexOf('.')
-    )
+    const title = getTitle(file.originalname)
+    const uuid = getUuid(file.filename)
     try {
       const note = await Note.create({
         user: req.user._id,
@@ -192,9 +189,12 @@ const deleteMyNote = asyncHandler(async (req, res) => {
       throw new Error('Unauthorized')
     }
 
+    await deleteFile(note) // This will catch and log any error that occurs
+
     await note.deleteOne()
 
-    await deleteFile(note) // This will catch and log any error that occurs
+    // This order of deletion ensures both are attemped, regardless
+    // of whether the other fails
 
     res.status(204).end()
   } catch (error) {
