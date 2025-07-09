@@ -2,7 +2,8 @@ import jwt from 'jsonwebtoken'
 import asyncHandler from 'express-async-handler'
 import User from '../models/userModel.js'
 
-// TODO: Change authentication from access tokens to access + refresh tokens
+// TODO: Change authentication from access tokens to access + refresh tokens,
+// save tokens in HTTP-only cookies rather than state or local storage
 
 const authenticateUser = asyncHandler(async (req, res, next) => {
   let token
