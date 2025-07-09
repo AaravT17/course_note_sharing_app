@@ -85,7 +85,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Verify user
+// @desc Verify user's email
 // @route GET /api/users/verify
 // @access Public
 const verifyUser = asyncHandler(async (req, res) => {
