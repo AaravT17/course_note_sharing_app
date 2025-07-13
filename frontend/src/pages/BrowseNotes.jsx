@@ -1,6 +1,6 @@
 import Navbar from '../components/Navbar.jsx'
 import NotesSearchBar from '../components/NotesSearchBar.jsx'
-import NotesDisplay from '../components/NotesDisplay.jsx'
+import NotesGrid from '../components/NotesGrid.jsx'
 
 function BrowseNotes() {
   const notes = [
@@ -48,7 +48,7 @@ function BrowseNotes() {
     <>
       <Navbar />
       <NotesSearchBar title="Browse Notes" />
-      <NotesDisplay
+      <NotesGrid
         title="Results"
         notes={notes}
       />

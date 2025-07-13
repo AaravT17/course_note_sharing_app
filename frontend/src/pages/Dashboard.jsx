@@ -1,6 +1,6 @@
 import Navbar from '../components/Navbar.jsx'
 import Hero from '../components/Hero.jsx'
-import NotesDisplay from '../components/NotesDisplay.jsx'
+import NotesGrid from '../components/NotesGrid.jsx'
 
 function Dashboard() {
   const notes = [
@@ -48,12 +48,12 @@ function Dashboard() {
     <>
       <Navbar />
       <Hero />
-      <NotesDisplay
+      <NotesGrid
         title="Recently Viewed"
         notes={notes}
       />
       {/* TODO: Add a 'You might be interested in' section, will also require an additional route in the backend */}
-      <NotesDisplay
+      <NotesGrid
         title="You Might Be Interested In..."
         notes={notes}
       />

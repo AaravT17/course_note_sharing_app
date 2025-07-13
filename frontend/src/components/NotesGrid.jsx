@@ -1,6 +1,6 @@
 import Note from './Note.jsx'
 
-function NotesDisplay({ title, notes }) {
+function NotesGrid({ title, notes }) {
   return (
     <section className="mb-6 mr-4 ml-4">
       <h2 className="text-xl font-heading font-semibold mb-4">{title}</h2>
