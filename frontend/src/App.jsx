@@ -1,0 +1,50 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Dashboard from './pages/Dashboard.jsx'
+import Login from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
+import Browse from './pages/BrowseNotes.jsx'
+import MyNotes from './pages/MyNotes.jsx'
+import UploadNotes from './pages/UploadNotes.jsx'
+
+function App() {
+  return (
+    <>
+      <Router>
+        <div>
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path="/login"
+              element={<Login />}
+            />
+            <Route
+              path="/register"
+              element={<Register />}
+            />
+
+            {/* Protected routes */}
+            {/* TODO: Wrap these routes within a ProtectedRoute component */}
+            <Route
+              path="/"
+              element={<Dashboard />}
+            />
+            <Route
+              path="/browse"
+              element={<Browse />}
+            />
+            <Route
+              path="/my-notes"
+              element={<MyNotes />}
+            />
+            <Route
+              path="/upload"
+              element={<UploadNotes />}
+            />
+          </Routes>
+        </div>
+      </Router>
+    </>
+  )
+}
+
+export default App

@@ -22,6 +22,9 @@ router.get('/verify', verifyUser)
 
 router.post('/login', loginUser)
 
+// TODO: Add a route to get notes the user might be interested in, and
+// add a recently viewed courses list to the user model to facilitate this
+
 router.get('/me', authenticateUser, getMe)
 
 router.put('/me', authenticateUser, updateMe)
