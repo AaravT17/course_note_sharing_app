@@ -16,4 +16,4 @@ function NotesGrid({ title, notes }) {
   )
 }
 
-export default NotesDisplay
+export default NotesGrid
