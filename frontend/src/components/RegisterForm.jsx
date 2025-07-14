@@ -20,13 +20,21 @@ function RegisterForm() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const { isError, isSuccess, isLoading, message } = useSelector(
+  const { user, isError, isSuccess, isLoading, message } = useSelector(
     (state) => state.user
   )
 
   useEffect(() => {
+    if (user) {
+      navigate('/')
+      dispatch(reset())
+      return
+    }
+
     if (isError) {
       toast.error(message)
+      dispatch(reset())
+      return
     }
 
     if (isSuccess) {
@@ -37,9 +45,7 @@ function RegisterForm() {
       navigate('/login')
       return
     }
-
-    dispatch(reset())
-  }, [isError, isSuccess, message, navigate, dispatch])
+  }, [user, isError, isSuccess, message, navigate, dispatch])
 
   const handleChange = (e) => {
     setFormData((prevState) => {

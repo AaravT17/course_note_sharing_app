@@ -1,6 +1,10 @@
 import { Mail, Lock } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import { reset, login } from '../features/user/userSlice.js'
 
 function LoginForm() {
   const [formData, setFormData] = useState({
@@ -10,7 +14,28 @@ function LoginForm() {
 
   const { email, password } = formData
 
-  const onChange = (e) => {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const { user, isError, isSuccess, isLoading, message } = useSelector(
+    (state) => state.user
+  )
+
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+      dispatch(reset())
+      return
+    }
+
+    if (isError) {
+      toast.error(message)
+      dispatch(reset())
+      return
+    }
+  }, [user, isError, isSuccess, message, navigate, dispatch])
+
+  const handleChange = (e) => {
     setFormData((prevState) => {
       return {
         ...prevState,
@@ -22,8 +47,18 @@ function LoginForm() {
     })
   }
 
-  const onSubmit = (e) => {
+  const handleLogin = (e) => {
     e.preventDefault()
+    const { email, password } = formData
+    if (email.trim() === '' || password.trim() === '') {
+      toast.error('Please fill in all fields')
+    } else {
+      const userData = {
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+      }
+      dispatch(login(userData))
+    }
   }
 
   return (
@@ -33,7 +68,10 @@ function LoginForm() {
           Login to Noteable
         </h2>
 
-        <form className="space-y-5 font-body">
+        <form
+          className="space-y-5 font-body"
+          onSubmit={handleLogin}
+        >
           {/* Email Field */}
           <div>
             <label
@@ -50,7 +88,7 @@ function LoginForm() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={onChange}
+                onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
               />
@@ -73,7 +111,7 @@ function LoginForm() {
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={onChange}
+                onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
               />
@@ -82,7 +120,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            onSubmit={onSubmit}
+            disabled={isLoading}
             className="w-full bg-blue-800 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition"
           >
             Login

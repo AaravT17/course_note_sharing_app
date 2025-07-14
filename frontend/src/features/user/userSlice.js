@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import axios from 'axios'
 import userService from './userService.js'
 
 const initialState = {
@@ -66,6 +65,15 @@ export const userSlice = createSlice({
       state.isLoading = false
       state.message = ''
     },
+    resetUser: (state) => {
+      state.user = null
+    },
+    setAccessToken: (state, action) => {
+      state.user = {
+        ...state.user,
+        accessToken: action.payload,
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -110,5 +118,5 @@ export const userSlice = createSlice({
   },
 })
 
-export const { reset } = userSlice.actions
+export const { reset, resetUser, setAccessToken } = userSlice.actions
 export default userSlice.reducer

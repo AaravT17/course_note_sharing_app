@@ -1,17 +1,19 @@
+import axiosPublic from '../../api/axiosPublic.js'
+
 const register = async (userData) => {
-  const response = await axios.post('/api/users/', userData)
+  const response = await axiosPublic.post('/api/users/', userData)
   return response.data
 }
 
 const login = async (userData) => {
-  const response = await axios.post('/api/users/login', userData, {
+  const response = await axiosPublic.post('/api/users/login', userData, {
     withCredentials: true,
   })
   return response.data
 }
 
 const logout = async () => {
-  const response = await axios.post(
+  const response = await axiosPublic.post(
     '/api/users/logout',
     {},
     {

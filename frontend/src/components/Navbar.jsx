@@ -30,6 +30,8 @@ function Navbar() {
   useEffect(() => {
     if (isError) {
       toast.error(message)
+      dispatch(reset())
+      return
     }
 
     if (isSuccess && !user) {
@@ -38,8 +40,6 @@ function Navbar() {
       navigate('/login')
       return
     }
-
-    dispatch(reset())
   }, [user, isError, isSuccess, message, navigate, dispatch])
 
   return (
