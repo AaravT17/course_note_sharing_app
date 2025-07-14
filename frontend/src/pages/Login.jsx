@@ -4,7 +4,7 @@ import LoginForm from '../components/LoginForm.jsx'
 function Login() {
   return (
     <>
-      <Navbar />
+      <Navbar isLoggedIn={false} />
       <LoginForm />
     </>
   )

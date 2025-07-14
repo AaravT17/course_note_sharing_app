@@ -1,8 +1,15 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import logo from '../assets/logo.png'
-import { NotebookText, Search, Upload, LogOut } from 'lucide-react'
+import {
+  NotebookText,
+  Search,
+  Upload,
+  LogOut,
+  LogIn,
+  UserPlus,
+} from 'lucide-react'
 
-function Navbar() {
+function Navbar({ isLoggedIn = false }) {
   return (
     <nav className="flex font-heading justify-between items-center p-4 mb-2 shadow-md">
       {/* Logo */}
@@ -18,39 +25,94 @@ function Navbar() {
 
       {/* Navigation */}
       <ul className="flex gap-4 text-base min-w-max">
-        <li>
-          <Link
-            to="/browse"
-            className="flex items-center gap-2 text-black hover:bg-blue-700 hover:text-white px-3 py-3 rounded-md transition leading-none"
-          >
-            <Search className="w-5 h-5" />
-            Browse
-          </Link>
-        </li>
-        <li>
-          <Link
-            to="/my-notes"
-            className="flex items-center gap-2 text-black hover:bg-blue-700 hover:text-white px-3 py-3 rounded-md transition leading-none"
-          >
-            <NotebookText className="w-5 h-5" />
-            My Notes
-          </Link>
-        </li>
-        <li>
-          <Link
-            to="/upload"
-            className="flex items-center gap-2 text-black hover:bg-blue-700 hover:text-white px-3 py-3 rounded-md transition leading-none"
-          >
-            <Upload className="w-5 h-5" />
-            Upload
-          </Link>
-        </li>
-        <li>
-          <button className="flex items-center gap-2 text-red-600 hover:bg-red-600 hover:text-white px-3 py-3 rounded-md transition leading-none cursor-pointer">
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </li>
+        {isLoggedIn ? (
+          <>
+            <li>
+              <NavLink
+                to="/browse"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-3 rounded-md transition leading-none ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-black hover:bg-blue-700 hover:text-white'
+                  }`
+                }
+              >
+                <Search className="w-5 h-5" />
+                Browse
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/my-notes"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-3 rounded-md transition leading-none ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-black hover:bg-blue-700 hover:text-white'
+                  }`
+                }
+              >
+                <NotebookText className="w-5 h-5" />
+                My Notes
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/upload"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-3 rounded-md transition leading-none ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-black hover:bg-blue-700 hover:text-white'
+                  }`
+                }
+              >
+                <Upload className="w-5 h-5" />
+                Upload
+              </NavLink>
+            </li>
+            <li>
+              <button className="flex items-center gap-2 text-red-600 hover:bg-red-600 hover:text-white px-3 py-3 rounded-md transition leading-none cursor-pointer">
+                <LogOut className="w-5 h-5" />
+                Logout
+              </button>
+            </li>
+          </>
+        ) : (
+          <>
+            <li>
+              <NavLink
+                to="/login"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-3 rounded-md transition leading-none ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-black hover:bg-blue-700 hover:text-white'
+                  }`
+                }
+              >
+                <LogIn className="w-5 h-5" />
+                Login
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/register"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-3 rounded-md transition leading-none ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-black hover:bg-blue-700 hover:text-white'
+                  }`
+                }
+              >
+                <UserPlus className="w-5 h-5" />
+                Register
+              </NavLink>
+            </li>
+          </>
+        )}
       </ul>
     </nav>
   )

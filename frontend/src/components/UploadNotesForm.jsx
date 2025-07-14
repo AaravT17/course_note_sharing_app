@@ -1,3 +1,5 @@
+import { MAX_FILE_SIZE_MB, MAX_FILES } from '../config/constants.js'
+
 function UploadNotesForm() {
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gray-50 px-4">
@@ -49,7 +51,7 @@ function UploadNotesForm() {
               htmlFor="note"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              PDF Notes (max 5 files, 10MB each)
+              PDF Notes (max {MAX_FILES} files, {MAX_FILE_SIZE_MB}MB each)
             </label>
             <input
               type="file"

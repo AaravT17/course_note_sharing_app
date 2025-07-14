@@ -4,7 +4,7 @@ import RegisterForm from '../components/RegisterForm.jsx'
 function Register() {
   return (
     <>
-      <Navbar />
+      <Navbar isLoggedIn={false} />
       <RegisterForm />
     </>
   )

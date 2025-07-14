@@ -1,6 +1,6 @@
 import Note from './Note.jsx'
 
-function NotesGrid({ title, notes }) {
+function NotesGrid({ title, notes, isMyNotesPage = false }) {
   return (
     <section className="mb-6 mr-4 ml-4">
       <h2 className="text-xl font-heading font-semibold mb-4">{title}</h2>
@@ -9,6 +9,7 @@ function NotesGrid({ title, notes }) {
           <Note
             key={note.id}
             note={note}
+            isMyNotesPage={isMyNotesPage}
           />
         ))}
       </div>
