@@ -1,10 +1,20 @@
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import nodemailer from 'nodemailer'
+import {
+  ACCESS_TOKEN_EXPIRY_MINS,
+  REFRESH_TOKEN_EXPIRY_DAYS,
+} from '../config/constants.js'
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+const generateAccessToken = (id) => {
+  return jwt.sign({ id, type: 'access' }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: `${ACCESS_TOKEN_EXPIRY_MINS}m`,
+  })
+}
+
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id, type: 'refresh' }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: `${REFRESH_TOKEN_EXPIRY_DAYS}d`,
   })
 }
 
@@ -49,7 +59,8 @@ const sendVerificationEmail = async (toEmail, verificationLink) => {
 }
 
 export {
-  generateToken,
+  generateAccessToken,
+  generateRefreshToken,
   isStrongPassword,
   hashVerificationToken,
   sendVerificationEmail,

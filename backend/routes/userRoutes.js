@@ -3,6 +3,8 @@ import {
   registerUser,
   verifyUser,
   loginUser,
+  logoutUser,
+  refreshAccessToken,
   getMe,
   updateMe,
   deleteMe,
@@ -21,6 +23,10 @@ router.post('/', registerUser)
 router.get('/verify', verifyUser)
 
 router.post('/login', loginUser)
+
+router.post('/logout', logoutUser)
+
+router.post('/auth/refresh', refreshAccessToken)
 
 // TODO: Add a route to get notes the user might be interested in, and
 // add a recently viewed courses list to the user model to facilitate this

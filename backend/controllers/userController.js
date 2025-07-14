@@ -7,12 +7,17 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import User from '../models/userModel.js'
 import {
-  generateToken,
+  generateAccessToken,
+  generateRefreshToken,
   isStrongPassword,
   hashVerificationToken,
   sendVerificationEmail,
 } from '../utils/userUtils.js'
-import { VERIFICATION_LINK_EXPIRY_HRS } from '../config/constants.js'
+import {
+  VERIFICATION_LINK_EXPIRY_HRS,
+  REFRESH_TOKEN_EXPIRY_DAYS,
+} from '../config/constants.js'
+import path from 'path'
 
 // @desc Register user, pending verification
 // @route POST /api/users
@@ -194,14 +199,66 @@ const loginUser = asyncHandler(async (req, res) => {
 
   await user.save()
 
+  res.cookie('refreshToken', generateRefreshToken(user._id.toString()), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'None',
+    path: '/',
+    maxAge: REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+  })
+
   // All checks complete, input data is valid, we can login the user
   res.status(200).json({
     _id: user._id,
     name: user.name,
     email: user.email,
     recentlyViewedNotes: notes,
-    token: generateToken(user.id),
+    accessToken: generateAccessToken(user._id.toString()),
   })
+})
+
+// @desc Logout user
+// @route POST /api/users/logout
+// @access Public
+const logoutUser = asyncHandler(async (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'None',
+    path: '/',
+  })
+
+  res.status(204).end()
+})
+
+// @desc Refresh access token
+// @route POST /api/users/auth/refresh
+// @access Public
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken
+
+  if (!refreshToken) {
+    res.status(401)
+    throw new Error('Unauthorized, please login again')
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET)
+    if (!decoded || decoded.type !== 'refresh') {
+      throw new Error('Unauthorized, invalid refresh token')
+    }
+    const user = await User.findById(decoded.id).select('-password')
+    if (!user) {
+      throw new Error('User not found')
+    }
+    res.status(200).json({
+      accessToken: generateAccessToken(user._id.toString()),
+    })
+  } catch (error) {
+    console.log(error)
+    res.status(401)
+    throw new Error('Unauthorized, please login again')
+  }
 })
 
 // @desc Get current user's data
@@ -277,4 +334,13 @@ const deleteMe = asyncHandler(async (req, res, next) => {
   }
 })
 
-export { registerUser, verifyUser, loginUser, getMe, updateMe, deleteMe }
+export {
+  registerUser,
+  verifyUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  getMe,
+  updateMe,
+  deleteMe,
+}

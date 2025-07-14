@@ -1,6 +1,7 @@
 import express from 'express'
 import dotenv from 'dotenv'
 dotenv.config() // Gives access to environment variables in .env file
+import cookieParser from 'cookie-parser'
 import fs from 'fs'
 import path from 'path'
 import cron from 'node-cron'
@@ -17,6 +18,8 @@ const app = express()
 // Middleware to parse JSON and URL-encoded request body data
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+// Middleware to parse cookies
+app.use(cookieParser())
 
 app.use('/api/users', userRouter)
 app.use('/api/notes', noteRouter)
