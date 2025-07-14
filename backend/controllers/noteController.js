@@ -153,8 +153,8 @@ const updateMyNote = asyncHandler(async (req, res) => {
     }
 
     if (!note.user.equals(req.user._id)) {
-      res.status(401)
-      throw new Error('Unauthorized')
+      res.status(403)
+      throw new Error('Forbidden, you can only update your own notes')
     }
 
     if (req.body.university) note.university = req.body.university.trim()
@@ -185,8 +185,8 @@ const deleteMyNote = asyncHandler(async (req, res) => {
     }
 
     if (!note.user.equals(req.user._id)) {
-      res.status(401)
-      throw new Error('Unauthorized')
+      res.status(403)
+      throw new Error('Forbidden, you can only delete your own notes')
     }
 
     await deleteFile(note) // This will catch and log any error that occurs
