@@ -46,7 +46,7 @@ function BrowseNotes() {
 
   return (
     <>
-      <Navbar isLoggedIn={true} />
+      <Navbar />
       <NotesSearchBar title="Browse Notes" />
       <NotesGrid
         title="Results"

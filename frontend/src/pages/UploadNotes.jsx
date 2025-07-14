@@ -4,7 +4,7 @@ import UploadNotesForm from '../components/UploadNotesForm.jsx'
 function UploadNotes() {
   return (
     <>
-      <Navbar isLoggedIn={true} />
+      <Navbar />
       <UploadNotesForm />
     </>
   )

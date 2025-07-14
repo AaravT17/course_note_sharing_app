@@ -46,7 +46,7 @@ function MyNotes() {
 
   return (
     <>
-      <Navbar isLoggedIn={true} />
+      <Navbar />
       <NotesSearchBar title="Search Your Notes" />
       <NotesGrid
         title="My Notes"

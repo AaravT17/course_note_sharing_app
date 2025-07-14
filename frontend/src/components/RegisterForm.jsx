@@ -1,7 +1,85 @@
 import { Mail, Lock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import { reset, register } from '../features/user/userSlice.js'
+import { isStrongPassword } from '../utils/userUtils.js'
 
 function RegisterForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
+
+  const { name, email, password, confirmPassword } = formData
+
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const { isError, isSuccess, isLoading, message } = useSelector(
+    (state) => state.user
+  )
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(message)
+    }
+
+    if (isSuccess) {
+      toast.success(
+        'Registration successful! A verification link has been sent to your email. Please check your inbox to activate your account.'
+      )
+      dispatch(reset())
+      navigate('/login')
+      return
+    }
+
+    dispatch(reset())
+  }, [isError, isSuccess, message, navigate, dispatch])
+
+  const handleChange = (e) => {
+    setFormData((prevState) => {
+      return {
+        ...prevState,
+        [e.target.name]:
+          e.target.name === 'email'
+            ? e.target.value.toLowerCase()
+            : e.target.value,
+      }
+    })
+  }
+
+  const handleRegister = (e) => {
+    e.preventDefault()
+    const { name, email, password, confirmPassword } = formData
+    if (
+      name.trim() === '' ||
+      email.trim() === '' ||
+      password.trim() === '' ||
+      confirmPassword.trim() === ''
+    ) {
+      toast.error('Please fill in all fields')
+    } else if (password !== confirmPassword) {
+      toast.error('Passwords do not match')
+    } else if (!isStrongPassword(password)) {
+      toast.error(
+        'Password must be at least 12 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character'
+      )
+    } else {
+      const userData = {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+        confirmPassword: confirmPassword.trim(),
+      }
+      dispatch(register(userData))
+    }
+  }
+
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
@@ -9,7 +87,10 @@ function RegisterForm() {
           Create an Account
         </h2>
 
-        <form className="space-y-5 font-body">
+        <form
+          className="space-y-5 font-body"
+          onSubmit={handleRegister}
+        >
           {/* Name Field */}
           <div>
             <label
@@ -22,8 +103,11 @@ function RegisterForm() {
               <User className="text-gray-400 w-5 h-5 mr-2" />
               <input
                 id="name"
+                name="name"
                 type="text"
                 placeholder="John Doe"
+                value={name}
+                onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
               />
@@ -42,8 +126,11 @@ function RegisterForm() {
               <Mail className="text-gray-400 w-5 h-5 mr-2" />
               <input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="you@example.com"
+                value={email}
+                onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
               />
@@ -62,8 +149,11 @@ function RegisterForm() {
               <Lock className="text-gray-400 w-5 h-5 mr-2" />
               <input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
+                value={password}
+                onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
               />
@@ -82,8 +172,11 @@ function RegisterForm() {
               <Lock className="text-gray-400 w-5 h-5 mr-2" />
               <input
                 id="confirmPassword"
+                name="confirmPassword"
                 type="password"
                 placeholder="••••••••"
+                value={confirmPassword}
+                onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
               />
@@ -92,6 +185,7 @@ function RegisterForm() {
 
           <button
             type="submit"
+            disabled={isLoading}
             className="w-full bg-blue-800 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition"
           >
             Register

@@ -1,4 +1,8 @@
+import { useSelector } from 'react-redux'
+
 function Hero() {
+  const { user } = useSelector((state) => state.user)
+
   const subtitleOptions = [
     'Find and share high-quality notes to support your peers.',
     'Make studying easier — for you and for someone else.',
@@ -43,7 +47,9 @@ function Hero() {
     <>
       <section className="bg-blue-800 font-heading px-4 py-8 sm:px-8 sm:py-12 rounded-lg shadow mb-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold text-white">Welcome, User!</h1>
+          <h1 className="text-4xl font-bold text-white">
+            Welcome, {user && user.name ? user.name.split(' ')[0] : 'User'}!
+          </h1>
           <p className="text-gray-100 mt-2 text-lg">{subtitle}</p>
         </div>
       </section>

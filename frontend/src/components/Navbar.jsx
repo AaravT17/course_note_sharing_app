@@ -8,8 +8,40 @@ import {
   LogIn,
   UserPlus,
 } from 'lucide-react'
+import { useSelector, useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import { reset, logout } from '../features/user/userSlice.js'
+import { useState, useEffect } from 'react'
 
-function Navbar({ isLoggedIn = false }) {
+function Navbar() {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const { user, isError, isSuccess, isLoading, message } = useSelector(
+    (state) => state.user
+  )
+
+  const handleLogout = (e) => {
+    e.preventDefault()
+    dispatch(logout())
+  }
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(message)
+    }
+
+    if (isSuccess && !user) {
+      toast.success('Logout successful!')
+      dispatch(reset())
+      navigate('/login')
+      return
+    }
+
+    dispatch(reset())
+  }, [user, isError, isSuccess, message, navigate, dispatch])
+
   return (
     <nav className="flex font-heading justify-between items-center p-4 mb-2 shadow-md">
       {/* Logo */}
@@ -25,7 +57,7 @@ function Navbar({ isLoggedIn = false }) {
 
       {/* Navigation */}
       <ul className="flex gap-4 text-base min-w-max">
-        {isLoggedIn ? (
+        {user ? (
           <>
             <li>
               <NavLink
@@ -73,7 +105,11 @@ function Navbar({ isLoggedIn = false }) {
               </NavLink>
             </li>
             <li>
-              <button className="flex items-center gap-2 text-red-600 hover:bg-red-600 hover:text-white px-3 py-3 rounded-md transition leading-none cursor-pointer">
+              <button
+                className="flex items-center gap-2 text-red-600 hover:bg-red-600 hover:text-white px-3 py-3 rounded-md transition leading-none cursor-pointer"
+                onClick={handleLogout}
+                disabled={isLoading}
+              >
                 <LogOut className="w-5 h-5" />
                 Logout
               </button>

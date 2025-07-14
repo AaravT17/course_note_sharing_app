@@ -46,7 +46,7 @@ function Dashboard() {
 
   return (
     <>
-      <Navbar isLoggedIn={true} />
+      <Navbar />
       <Hero />
       <NotesGrid
         title="Recently Viewed"
