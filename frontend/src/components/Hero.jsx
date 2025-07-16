@@ -1,8 +1,8 @@
 import { useSelector } from 'react-redux'
+import { useState, useEffect } from 'react'
+import { SUBTITLE_ROTATION_INTERVAL_SECONDS } from '../config/constants.js'
 
 function Hero() {
-  const { user } = useSelector((state) => state.user)
-
   const subtitleOptions = [
     'Find and share high-quality notes to support your peers.',
     'Make studying easier — for you and for someone else.',
@@ -38,10 +38,29 @@ function Hero() {
     'Crowdsourced academic success.',
   ]
 
-  const subtitle =
-    subtitleOptions[Math.floor(Math.random() * subtitleOptions.length)]
+  const { user } = useSelector((state) => state.user)
 
-  // TODO: Add a rotation effect for the subtitle to change every few seconds
+  const [subtitle, setSubtitle] = useState(
+    subtitleOptions[Math.floor(Math.random() * subtitleOptions.length)]
+  )
+
+  useEffect(() => {
+    console.log('Effect ran: setting up interval')
+    const intervalId = setInterval(() => {
+      setSubtitle((prevSubtitle) => {
+        let newSubtitle =
+          subtitleOptions[Math.floor(Math.random() * subtitleOptions.length)]
+        while (newSubtitle === prevSubtitle) {
+          newSubtitle =
+            subtitleOptions[Math.floor(Math.random() * subtitleOptions.length)]
+        }
+        return newSubtitle
+      })
+    }, SUBTITLE_ROTATION_INTERVAL_SECONDS * 1000)
+    return () => clearInterval(intervalId)
+  }, [])
+
+  // TODO: Add a fade out effect for the subtitle change
 
   return (
     <>

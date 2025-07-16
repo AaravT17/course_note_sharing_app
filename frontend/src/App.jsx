@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
-import Browse from './pages/BrowseNotes.jsx'
-import MyNotes from './pages/MyNotes.jsx'
+import BrowseNotes, { getBrowseNotes } from './pages/BrowseNotes.jsx'
+import MyNotes, { getMyNotes } from './pages/MyNotes.jsx'
 import UploadNotes from './pages/UploadNotes.jsx'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -32,11 +32,13 @@ function App() {
             />
             <Route
               path="/browse"
-              element={<Browse />}
+              element={<BrowseNotes />}
+              loader={getBrowseNotes}
             />
             <Route
               path="/my-notes"
               element={<MyNotes />}
+              loader={getMyNotes}
             />
             <Route
               path="/upload"

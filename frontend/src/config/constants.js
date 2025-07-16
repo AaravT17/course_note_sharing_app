@@ -1,3 +1,7 @@
 export const MAX_FILE_SIZE_MB = 10
 
 export const MAX_FILES = 5
+
+export const SUBTITLE_ROTATION_INTERVAL_SECONDS = 30
+
+export const SUBTITLE_FADE_DURATION_MS = 500

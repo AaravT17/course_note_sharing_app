@@ -1,6 +1,6 @@
 import { Mail, Lock } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'

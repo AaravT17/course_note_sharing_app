@@ -1,5 +1,5 @@
 import axios from 'axios'
-import store from '../app/store.js'
+import { store } from '../app/store.js'
 import { resetUser, setAccessToken } from '../features/user/userSlice.js'
 
 const axiosPrivate = axios.create({

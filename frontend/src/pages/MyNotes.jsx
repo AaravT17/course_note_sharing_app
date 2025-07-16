@@ -1,60 +1,56 @@
 import Navbar from '../components/Navbar.jsx'
 import NotesSearchBar from '../components/NotesSearchBar.jsx'
 import NotesGrid from '../components/NotesGrid.jsx'
+import axiosPrivate from '../api/axiosPrivate.js'
+import { useLoaderData } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { toast } from 'react-toastify'
+import { reset } from '../features/user/userSlice.js'
 
 function MyNotes() {
-  const notes = [
-    {
-      id: 1,
-      title: 'CSC207 – Lecture 1: Introduction to Software Design',
-      courseCode: 'CSC207',
-      university: 'University of Toronto',
-    },
-    {
-      id: 2,
-      title:
-        'CSC207 – Lecture 2: Strategy Pattern, Observer Pattern, and Why You Shouldn’t Panic (Yet)',
-      courseCode: 'CSC207',
-      university: 'University of Toronto',
-    },
-    {
-      id: 3,
-      title: 'CSC207 – Lecture 3: SOLID Principles Recap',
-      courseCode: 'CSC207',
-      university: 'University of Toronto',
-    },
-    {
-      id: 4,
-      title: 'CSC207 – Lecture 1: Introduction to Software Design',
-      courseCode: 'CSC207',
-      university: 'University of Toronto',
-    },
-    {
-      id: 5,
-      title:
-        'CSC207 – Lecture 2: Strategy Pattern, Observer Pattern, and Why You Shouldn’t Panic (Yet)',
-      courseCode: 'CSC207',
-      university: 'University of Toronto',
-    },
-    {
-      id: 6,
-      title: 'CSC207 – Lecture 3: SOLID Principles Recap',
-      courseCode: 'CSC207',
-      university: 'University of Toronto',
-    },
-  ]
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const notesData = useLoaderData()
+  const [notes, setNotes] = useState(notesData.notes)
+  const [error, setError] = useState(notesData.error)
+  const { user } = useSelector((state) => state.user)
+
+  useEffect(() => {
+    if (!user) {
+      toast.error('Session expired. Please log in again.')
+      dispatch(reset())
+      navigate('/login')
+      return
+    }
+  }, [user, error, navigate, dispatch])
 
   return (
     <>
       <Navbar />
-      <NotesSearchBar title="Search Your Notes" />
+      <NotesSearchBar
+        searchBarTitle="Search Your Notes"
+        apiRoute="/api/users/me/notes"
+        setNotes={setNotes}
+        setError={setError}
+      />
       <NotesGrid
-        title="My Notes"
+        notesGridTitle="My Notes"
         notes={notes}
-        isMyNotesPage={true}
+        error={error}
       />
     </>
   )
+}
+
+export const getMyNotes = async () => {
+  try {
+    const response = await axiosPrivate.get('/api/users/me/notes')
+    return { notes: response.data, error: false }
+  } catch (error) {
+    return { notes: [], error: true }
+  }
 }
 
 export default MyNotes
