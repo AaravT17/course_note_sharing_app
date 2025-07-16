@@ -39,6 +39,7 @@ function MyNotes() {
         notesGridTitle="My Notes"
         notes={notes}
         error={error}
+        setNotes={setNotes}
       />
     </>
   )

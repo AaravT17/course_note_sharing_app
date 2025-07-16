@@ -23,7 +23,6 @@ function Navbar() {
   )
 
   const handleLogout = (e) => {
-    e.preventDefault()
     dispatch(logout())
   }
 

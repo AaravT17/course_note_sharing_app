@@ -1,9 +1,8 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { reset } from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
-import axiosPublic from '../api/axiosPublic.js'
 
 import {
   BookOpenText,
@@ -16,8 +15,9 @@ import {
   Trash,
 } from 'lucide-react'
 
-function Note({ note }) {
+function Note({ note, setNotes }) {
   const { user } = useSelector((state) => state.user)
+  const [isLoading, setIsLoading] = useState(false)
 
   const isMyNote = user._id.toString() === note.user._id.toString()
 
@@ -31,19 +31,49 @@ function Note({ note }) {
 
   // TODO: Add liking and disliking functionality, and edit the global user's liked and disliked notes
 
-  const handleViewNote = (e) => {
-    console.log('View')
+  const handleViewNote = async (e) => {
+    e.stopPropagation()
+    if (isLoading) return
+    setIsLoading(true)
+    try {
+      const response = await axiosPrivate.get(
+        `/api/notes/${note._id.toString()}/view`,
+        {
+          responseType: 'blob',
+        }
+      )
+      const blobUrl = URL.createObjectURL(response.data)
+      window.open(blobUrl, '_blank')
+    } catch (error) {
+      toast.error('Failed to view note. Please try again later.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleDeleteNote = (e) => {
+  const handleDeleteNote = async (e) => {
     e.stopPropagation()
-    console.log('Delete')
+    if (!window.confirm('Are you sure you want to delete this note?')) return
+    setIsLoading(true)
+    try {
+      await axiosPrivate.delete(`/api/users/me/notes/${note._id.toString()}`)
+      setNotes((prevNotes) =>
+        prevNotes.filter(
+          (prevNote) => prevNote._id.toString() !== note._id.toString()
+        )
+      )
+      toast.success('Note deleted successfully.')
+    } catch (error) {
+      toast.error('Failed to delete note. Please try again later.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleEditNote = (e) => {
-    e.stopPropagation()
-    console.log('Edit')
-  }
+  // const handleEditNote = (e) => {
+  //   e.stopPropagation()
+  //   console.log('Edit')
+  // }
 
   const handleLikeNote = (e) => {
     e.stopPropagation()
@@ -79,11 +109,12 @@ function Note({ note }) {
             <GraduationCap className="w-4 h-4" /> {note.university}
           </span>
           <span className="flex items-center gap-1">
-            <User className="w-4 h-4" /> {note.user.name}
-            {/* TODO: Add anonymity, both here and in the upload form */}
+            <User className="w-4 h-4" />{' '}
+            {note.isAnonymous ? '-' : note.user.name}
           </span>
           <span className="flex items-center gap-1 text-gray-400 text-xs mt-1">
-            <Clock className="w-4 h-4" /> {note.createdAt.toLocaleString()}
+            <Clock className="w-4 h-4" />{' '}
+            {new Date(note.createdAt).toLocaleString()}
           </span>
         </div>
 
@@ -93,14 +124,16 @@ function Note({ note }) {
             <button
               className="flex items-center gap-1 hover:text-blue-600 transition"
               onClick={handleLikeNote}
+              disabled={isLoading}
             >
-              <ThumbsUp className="w-4 h-4" /> {note.likes}
+              <ThumbsUp className="w-4 h-4" /> {note.likes || 0}
             </button>
             <button
               className="flex items-center gap-1 hover:text-red-600 transition"
               onClick={handleDislikeNote}
+              disabled={isLoading}
             >
-              <ThumbsDown className="w-4 h-4" /> {note.dislikes}
+              <ThumbsDown className="w-4 h-4" /> {note.dislikes || 0}
             </button>
           </div>
         )}
@@ -109,17 +142,19 @@ function Note({ note }) {
       {/* Right Column: Edit/Delete */}
       {isMyNote && (
         <div className="flex flex-row gap-2 items-start self-start shrink-0">
-          <button
+          {/* <button
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Edit Note"
             onClick={handleEditNote}
+            disabled={isLoading}
           >
             <Pencil className="w-4 h-4 text-gray-600" />
-          </button>
+          </button> */}
           <button
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Delete Note"
             onClick={handleDeleteNote}
+            disabled={isLoading}
           >
             <Trash className="w-4 h-4 text-red-600" />
           </button>

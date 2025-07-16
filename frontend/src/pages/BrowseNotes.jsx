@@ -39,6 +39,7 @@ function BrowseNotes() {
         notesGridTitle="Results"
         notes={notes}
         error={error}
+        setNotes={setNotes}
       />
     </>
   )

@@ -113,6 +113,7 @@ function RegisterForm() {
                 type="text"
                 placeholder="John Doe"
                 value={name}
+                disabled={isLoading}
                 onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
@@ -136,6 +137,7 @@ function RegisterForm() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
+                disabled={isLoading}
                 onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
@@ -159,6 +161,7 @@ function RegisterForm() {
                 type="password"
                 placeholder="••••••••"
                 value={password}
+                disabled={isLoading}
                 onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
@@ -182,6 +185,7 @@ function RegisterForm() {
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
+                disabled={isLoading}
                 onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"

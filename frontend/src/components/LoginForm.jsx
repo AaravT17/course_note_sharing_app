@@ -88,6 +88,7 @@ function LoginForm() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
+                disabled={isLoading}
                 onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"
@@ -111,6 +112,7 @@ function LoginForm() {
                 type="password"
                 placeholder="••••••••"
                 value={password}
+                disabled={isLoading}
                 onChange={handleChange}
                 required
                 className="flex-1 bg-transparent outline-none text-sm text-gray-800"

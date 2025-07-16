@@ -1,6 +1,6 @@
 import Note from './Note.jsx'
 
-function NotesGrid({ notesGridTitle, notes, error }) {
+function NotesGrid({ notesGridTitle, notes = [], error, setNotes }) {
   let emptyMsg = 'No notes were found.'
   if (notesGridTitle === 'Recently Viewed') {
     emptyMsg =
@@ -31,6 +31,7 @@ function NotesGrid({ notesGridTitle, notes, error }) {
             <Note
               key={note.id || note._id.toString()}
               note={note}
+              setNotes={setNotes}
             />
           ))}
         </div>
