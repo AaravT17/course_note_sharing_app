@@ -6,6 +6,7 @@ const noteSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true,
     },
     university: {
       type: String,
@@ -19,10 +20,22 @@ const noteSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isAnonymous: {
+      type: Boolean,
+      default: false,
+    },
     uuid: {
       type: String,
       required: true,
       unique: true,
+    },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+    dislikes: {
+      type: Number,
+      default: 0,
     },
     // For storage, file name will be generated as <uuid>.pdf
     // This should ensure that no naming collisions occur

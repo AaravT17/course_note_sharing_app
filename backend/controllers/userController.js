@@ -5,6 +5,7 @@ import asyncHandler from 'express-async-handler'
  */
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
 import User from '../models/userModel.js'
 import {
   generateAccessToken,
@@ -17,7 +18,6 @@ import {
   VERIFICATION_LINK_EXPIRY_HRS,
   REFRESH_TOKEN_EXPIRY_DAYS,
 } from '../config/constants.js'
-import path from 'path'
 
 // @desc Register user, pending verification
 // @route POST /api/users
@@ -70,8 +70,9 @@ const registerUser = asyncHandler(async (req, res) => {
       email,
       password: hashedPassword,
       verificationToken: hashedToken,
-      verificationTokenExpiry:
-        Date.now() + 1000 * 60 * 60 * VERIFICATION_LINK_EXPIRY_HRS,
+      verificationTokenExpiry: new Date(
+        Date.now() + 1000 * 60 * 60 * VERIFICATION_LINK_EXPIRY_HRS
+      ),
     })
 
     const verificationLink = `${
@@ -191,9 +192,26 @@ const loginUser = asyncHandler(async (req, res) => {
    * populated list have likely been deleted)
    */
 
-  await user.populate('recentlyViewedNotes')
+  await user.populate({
+    path: 'recentlyViewedNotes',
+    populate: { path: 'user', select: 'name _id' },
+  })
 
   const notes = user.recentlyViewedNotes
+
+  const processedNotes = notes.map((note) => {
+    if (note.isAnonymous) {
+      return {
+        ...note.toObject(),
+        user: {
+          _id: note.user?._id,
+          id: note.user?._id?.toString(),
+          name: '-',
+        },
+      }
+    }
+    return note.toObject()
+  })
 
   user.recentlyViewedNotes = notes.map((note) => note._id)
 
@@ -212,7 +230,7 @@ const loginUser = asyncHandler(async (req, res) => {
     _id: user._id,
     name: user.name,
     email: user.email,
-    recentlyViewedNotes: notes,
+    recentlyViewedNotes: processedNotes,
     accessToken: generateAccessToken(user._id.toString()),
   })
 })
@@ -265,9 +283,26 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 // @route GET /api/users/me
 // @access Private
 const getMe = asyncHandler(async (req, res) => {
-  await req.user.populate('recentlyViewedNotes')
+  await req.user.populate({
+    path: 'recentlyViewedNotes',
+    populate: { path: 'user', select: 'name _id' },
+  })
 
   const notes = req.user.recentlyViewedNotes
+
+  const processedNotes = notes.map((note) => {
+    if (note.isAnonymous) {
+      return {
+        ...note.toObject(),
+        user: {
+          _id: note.user?._id,
+          id: note.user?._id?.toString(),
+          name: '-',
+        },
+      }
+    }
+    return note.toObject()
+  })
 
   req.user.recentlyViewedNotes = notes.map((note) => note._id)
 
@@ -277,7 +312,7 @@ const getMe = asyncHandler(async (req, res) => {
     _id: req.user._id,
     name: req.user.name,
     email: req.user.email,
-    recentlyViewedNotes: notes,
+    recentlyViewedNotes: processedNotes,
   })
 })
 
@@ -294,15 +329,33 @@ const updateMe = asyncHandler(async (req, res) => {
     req.user.recentlyViewedNotes = req.body.recentlyViewedNotes
   }
   try {
-    await req.user.populate('recentlyViewedNotes')
+    await req.user.populate({
+      path: 'recentlyViewedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    })
+
     const notes = req.user.recentlyViewedNotes
+
+    const processedNotes = notes.map((note) => {
+      if (note.isAnonymous) {
+        return {
+          ...note.toObject(),
+          user: {
+            _id: note.user?._id,
+            id: note.user?._id?.toString(),
+            name: '-',
+          },
+        }
+      }
+      return note.toObject()
+    })
     req.user.recentlyViewedNotes = notes.map((note) => note._id)
     const updatedUser = await req.user.save()
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
-      recentlyViewedNotes: notes,
+      recentlyViewedNotes: processedNotes,
     })
   } catch (error) {
     console.log(error)

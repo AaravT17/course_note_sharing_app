@@ -133,7 +133,7 @@ export const userSlice = createSlice({
         state.message = action.payload
       })
       .addCase(updateRecentNotes.fulfilled, (state, action) => {
-        state.user = action.payload
+        state.user = { ...state.user, ...action.payload }
       })
   },
 })

@@ -112,7 +112,11 @@ function Note({ note, setNotes }) {
           </span>
           <span className="flex items-center gap-1">
             <User className="w-4 h-4" />{' '}
-            {note.isAnonymous ? '-' : note.user.name}
+            {isMyNote
+              ? user.name
+              : note.isAnonymous
+              ? '-'
+              : note.user?.name || '-'}
           </span>
           <span className="flex items-center gap-1 text-gray-400 text-xs mt-1">
             <Clock className="w-4 h-4" />{' '}

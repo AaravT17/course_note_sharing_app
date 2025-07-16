@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add an email address'],
       unique: true,
+      index: true,
     },
     password: {
       type: String,
@@ -22,6 +23,24 @@ const userSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Note',
           required: true,
+        },
+      ],
+      default: [],
+    },
+    likedNotes: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Note',
+        },
+      ],
+      default: [],
+    },
+    dislikedNotes: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Note',
         },
       ],
       default: [],

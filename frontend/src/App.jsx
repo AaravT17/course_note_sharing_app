@@ -9,6 +9,8 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 function App() {
+  // TODO: Add a useEffect to automatically log in the user if there is a valid refresh token
+
   return (
     <>
       <Router>

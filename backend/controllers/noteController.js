@@ -21,17 +21,36 @@ import {
 // @access Private
 const getNotesMetadata = asyncHandler(async (req, res) => {
   const query = {
+    user: { $ne: req.user._id }, // Exclude current user's notes
     ...(req.query.university && {
       university: { $regex: req.query.university.trim(), $options: 'i' },
     }),
     ...(req.query.courseCode && {
       courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
+    ...(req.query.title && {
+      title: { $regex: req.query.title.trim(), $options: 'i' },
+    }),
   }
 
   try {
-    const notes = await Note.find(query).sort({ createdAt: -1 })
-    res.status(200).json(notes)
+    const notes = await Note.find(query)
+      .populate('user', 'name _id')
+      .sort({ createdAt: -1 })
+    const processedNotes = notes.map((note) => {
+      if (note.isAnonymous) {
+        return {
+          ...note.toObject(),
+          user: {
+            _id: note.user?._id,
+            id: note.user?._id?.toString(),
+            name: '-',
+          },
+        }
+      }
+      return note.toObject()
+    })
+    res.status(200).json(processedNotes)
   } catch (error) {
     console.log(error)
     throw error
@@ -86,11 +105,24 @@ const uploadNotes = asyncHandler(async (req, res) => {
     const title = getTitle(file.originalname)
     const uuid = getUuid(file.filename)
     try {
+      const existingNote = await Note.findOne({
+        user: req.user._id,
+        university: req.body.university.trim(),
+        courseCode: req.body.courseCode.trim().toUpperCase(),
+        title,
+      })
+      if (existingNote) {
+        res.status(400)
+        throw new Error(
+          'You have already uploaded a note with the same title for this course'
+        )
+      }
       const note = await Note.create({
         user: req.user._id,
-        university: req.body.university,
-        courseCode: req.body.courseCode,
+        university: req.body.university.trim(),
+        courseCode: req.body.courseCode.trim().toUpperCase(),
         title,
+        isAnonymous: req.body.isAnonymous === 'true',
         uuid,
       })
       savedNotes.push(note)
@@ -133,11 +165,32 @@ const getMyNotes = asyncHandler(async (req, res) => {
     ...(req.query.courseCode && {
       courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
+    ...(req.query.title && {
+      title: { $regex: req.query.title.trim(), $options: 'i' },
+    }),
   }
-  const notes = await Note.find(query).sort({
-    createdAt: -1,
-  })
-  res.status(200).json(notes)
+  try {
+    const notes = await Note.find(query)
+      .populate('user', 'name _id')
+      .sort({ createdAt: -1 })
+    const processedNotes = notes.map((note) => {
+      if (note.isAnonymous) {
+        return {
+          ...note.toObject(),
+          user: {
+            _id: note.user?._id,
+            id: note.user?._id?.toString(),
+            name: '-',
+          },
+        }
+      }
+      return note.toObject()
+    })
+    res.status(200).json(processedNotes)
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
 })
 
 // @desc Update current user's note
