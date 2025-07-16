@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import { reset } from '../features/user/userSlice.js'
+import { updateRecentNotes } from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
 
 import {
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 
 function Note({ note, setNotes }) {
+  const dispatch = useDispatch()
   const { user } = useSelector((state) => state.user)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -44,6 +45,7 @@ function Note({ note, setNotes }) {
       )
       const blobUrl = URL.createObjectURL(response.data)
       window.open(blobUrl, '_blank')
+      dispatch(updateRecentNotes(note))
     } catch (error) {
       toast.error('Failed to view note. Please try again later.')
     } finally {
