@@ -2,6 +2,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
 import { setRecentlyViewedNotes } from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
+import { MAX_RECENT_NOTES } from '../config/constants.js'
 
 import {
   BookOpenText,
@@ -13,6 +14,7 @@ import {
   Pencil,
   Trash,
 } from 'lucide-react'
+import { MAX } from 'uuid'
 
 function Note({ note, setNotes, loading = false, setLoading }) {
   const dispatch = useDispatch()
@@ -48,7 +50,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         ...user.recentlyViewedNotes.filter(
           (recentNote) => recentNote._id.toString() !== note._id.toString()
         ),
-      ].slice(0, 10)
+      ].slice(0, MAX_RECENT_NOTES)
 
       const responseRecentNotes = await axiosPrivate.put('/api/users/me', {
         recentlyViewedNotes: updatedNotes.map((note) => note._id),
