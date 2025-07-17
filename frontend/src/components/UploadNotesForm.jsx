@@ -212,7 +212,9 @@ function UploadNotesForm({
               onChange={handleFileChange}
               disabled={loading || isLoading}
               multiple
-              className="w-full border border-gray-300 rounded-md px-3 py-2 file:bg-blue-800 file:mr-2 file:text-white file:px-4 file:py-2 file:hover:bg-blue-700 file:rounded-md file:border-0 file:cursor-pointer text-gray-400"
+              className={`w-full border border-gray-300 rounded-md px-3 py-2 file:bg-blue-800 file:mr-2 file:text-white file:px-4 file:py-2 file:hover:bg-blue-700 file:rounded-md file:border-0 file:cursor-pointer text-gray-400 ${
+                selectedFiles.length > 0 ? 'text-transparent' : ''
+              }`}
             />
           </div>
 

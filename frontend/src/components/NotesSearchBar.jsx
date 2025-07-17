@@ -18,16 +18,13 @@ function NotesSearchBar({
   })
 
   const { title, courseCode, university } = searchQuery
-
   const { isLoading } = useSelector((state) => state.user)
 
   const handleChange = (e) => {
-    setSearchQuery((prevState) => {
-      return {
-        ...prevState,
-        [e.target.name]: e.target.value,
-      }
-    })
+    setSearchQuery((prevState) => ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
   }
 
   const handleSearch = async (e) => {
@@ -52,18 +49,38 @@ function NotesSearchBar({
     }
   }
 
+  const handleClearFilters = async (e) => {
+    e.preventDefault()
+    if (loading || isLoading) return
+    setSearchQuery({
+      title: '',
+      courseCode: '',
+      university: '',
+    })
+    setLoading(true)
+    try {
+      const response = await axiosPrivate.get(apiRoute)
+      setNotes(response.data)
+      setError(false)
+    } catch (error) {
+      setNotes([])
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="bg-blue-800 mb-6 rounded-lg px-4 py-10 sm:py-12">
       <form
         className="max-w-5xl mx-auto space-y-6"
         onSubmit={handleSearch}
       >
-        {/* Title */}
         <h2 className="text-white text-3xl font-heading font-bold text-center">
           {searchBarTitle}
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-4 font-body">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 font-body">
           {/* Title */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
             <BookOpenText className="w-5 h-5 text-gray-400 mr-2" />
@@ -109,7 +126,7 @@ function NotesSearchBar({
             />
           </div>
 
-          {/* Submit Button */}
+          {/* Search Button */}
           <button
             type="submit"
             className="flex items-center justify-center bg-white text-blue-800 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition shadow-sm"
@@ -121,6 +138,16 @@ function NotesSearchBar({
           >
             <Search className="w-5 h-5 mr-2" />
             Search
+          </button>
+
+          {/* Clear Filters Button */}
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="text-sm text-white/80 hover:text-white underline font-medium transition"
+            disabled={loading || isLoading}
+          >
+            Clear filters
           </button>
         </div>
       </form>

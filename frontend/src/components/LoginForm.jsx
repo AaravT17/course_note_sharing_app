@@ -1,4 +1,4 @@
-import { Mail, Lock } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
@@ -10,6 +10,7 @@ function LoginForm() {
     email: '',
     password: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   const { email, password } = formData
 
@@ -88,19 +89,32 @@ function LoginForm() {
             >
               Password
             </label>
-            <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-blue-600">
+            <div className="relative flex items-center border border-gray-300 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-blue-600">
               <Lock className="text-gray-400 w-5 h-5 mr-2" />
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 disabled={isLoading}
                 onChange={handleChange}
                 required
-                className="flex-1 bg-transparent outline-none text-sm text-gray-800"
+                className="flex-1 bg-transparent outline-none text-sm text-gray-800 pr-8"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
             </div>
           </div>
 
