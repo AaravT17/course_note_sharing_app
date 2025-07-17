@@ -22,7 +22,7 @@ const getUuid = (storageFileName) => {
 }
 
 const getTitle = (originalFileName) => {
-  path.basename(originalFileName, path.extname(originalFileName)).trim()
+  return path.basename(originalFileName, path.extname(originalFileName)).trim()
 }
 
 // Helper functions for handling cleanup following a failed upload
