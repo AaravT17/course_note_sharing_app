@@ -10,11 +10,10 @@ import {
 } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import { reset, logout } from '../features/user/userSlice.js'
+import { logout } from '../features/user/userSlice.js'
 import { useState, useEffect } from 'react'
 
-function Navbar() {
+function Navbar({ loading = false }) {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
@@ -26,20 +25,11 @@ function Navbar() {
     dispatch(logout())
   }
 
-  useEffect(() => {
-    if (isError) {
-      toast.error(message)
-      dispatch(reset())
-      return
+  const blockNavOnLoading = (e) => {
+    if (loading || isLoading) {
+      e.preventDefault()
     }
-
-    if (isSuccess && !user) {
-      toast.success('Logout successful!')
-      dispatch(reset())
-      navigate('/login')
-      return
-    }
-  }, [user, isError, isSuccess, message, navigate, dispatch])
+  }
 
   return (
     <nav className="flex font-heading justify-between items-center p-4 mb-2 shadow-md">
@@ -50,6 +40,7 @@ function Navbar() {
             src={logo}
             alt="Noteable logo"
             className="h-12 min-w-40 w-auto"
+            onClick={blockNavOnLoading}
           />
         </Link>
       </div>
@@ -68,6 +59,7 @@ function Navbar() {
                       : 'text-black hover:bg-blue-700 hover:text-white'
                   }`
                 }
+                onClick={blockNavOnLoading}
               >
                 <Search className="w-5 h-5" />
                 Browse
@@ -83,6 +75,7 @@ function Navbar() {
                       : 'text-black hover:bg-blue-700 hover:text-white'
                   }`
                 }
+                onClick={blockNavOnLoading}
               >
                 <NotebookText className="w-5 h-5" />
                 My Notes
@@ -98,6 +91,7 @@ function Navbar() {
                       : 'text-black hover:bg-blue-700 hover:text-white'
                   }`
                 }
+                onClick={blockNavOnLoading}
               >
                 <Upload className="w-5 h-5" />
                 Upload
@@ -107,7 +101,7 @@ function Navbar() {
               <button
                 className="flex items-center gap-2 text-red-600 hover:bg-red-600 hover:text-white px-3 py-3 rounded-md transition leading-none cursor-pointer"
                 onClick={handleLogout}
-                disabled={isLoading}
+                disabled={loading || isLoading}
               >
                 <LogOut className="w-5 h-5" />
                 Logout
@@ -126,6 +120,7 @@ function Navbar() {
                       : 'text-black hover:bg-blue-700 hover:text-white'
                   }`
                 }
+                onClick={blockNavOnLoading}
               >
                 <LogIn className="w-5 h-5" />
                 Login
@@ -141,6 +136,7 @@ function Navbar() {
                       : 'text-black hover:bg-blue-700 hover:text-white'
                   }`
                 }
+                onClick={blockNavOnLoading}
               >
                 <UserPlus className="w-5 h-5" />
                 Register

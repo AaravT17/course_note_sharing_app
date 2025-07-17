@@ -1,8 +1,16 @@
 import { Search, BookOpenText, GraduationCap, Landmark } from 'lucide-react'
 import axiosPrivate from '../api/axiosPrivate'
 import { useState } from 'react'
+import { useSelector } from 'react-redux'
 
-function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
+function NotesSearchBar({
+  searchBarTitle,
+  apiRoute,
+  setNotes,
+  setError,
+  loading = false,
+  setLoading,
+}) {
   const [searchQuery, setSearchQuery] = useState({
     title: '',
     courseCode: '',
@@ -10,6 +18,8 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
   })
 
   const { title, courseCode, university } = searchQuery
+
+  const { isLoading } = useSelector((state) => state.user)
 
   const handleChange = (e) => {
     setSearchQuery((prevState) => {
@@ -22,6 +32,8 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
 
   const handleSearch = async (e) => {
     e.preventDefault()
+    if (loading || isLoading) return
+    setLoading(true)
     try {
       const response = await axiosPrivate.get(apiRoute, {
         params: {
@@ -35,6 +47,8 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
     } catch (error) {
       setNotes([])
       setError(true)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -59,6 +73,7 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
               name="title"
               value={title}
               onChange={handleChange}
+              disabled={loading || isLoading}
               placeholder="Search by title"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
@@ -73,6 +88,7 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
               name="courseCode"
               value={courseCode}
               onChange={handleChange}
+              disabled={loading || isLoading}
               placeholder="Search by course code"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
@@ -87,6 +103,7 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
               name="university"
               value={university}
               onChange={handleChange}
+              disabled={loading || isLoading}
               placeholder="Search by university"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
@@ -96,7 +113,11 @@ function NotesSearchBar({ searchBarTitle, apiRoute, setNotes, setError }) {
           <button
             type="submit"
             className="flex items-center justify-center bg-white text-blue-800 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition shadow-sm"
-            disabled={!title.trim() && !courseCode.trim() && !university.trim()}
+            disabled={
+              loading ||
+              isLoading ||
+              (!title.trim() && !courseCode.trim() && !university.trim())
+            }
           >
             <Search className="w-5 h-5 mr-2" />
             Search

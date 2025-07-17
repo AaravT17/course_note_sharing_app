@@ -1,10 +1,9 @@
 import { Mail, Lock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { reset, register } from '../features/user/userSlice.js'
+import { register } from '../features/user/userSlice.js'
 import { isStrongPassword } from '../utils/userUtils.js'
 
 function RegisterForm() {
@@ -17,35 +16,11 @@ function RegisterForm() {
 
   const { name, email, password, confirmPassword } = formData
 
-  const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const { user, isError, isSuccess, isLoading, message } = useSelector(
     (state) => state.user
   )
-
-  useEffect(() => {
-    if (user) {
-      navigate('/')
-      dispatch(reset())
-      return
-    }
-
-    if (isError) {
-      toast.error(message)
-      dispatch(reset())
-      return
-    }
-
-    if (isSuccess) {
-      toast.success(
-        'Registration successful! A verification link has been sent to your email. Please check your inbox to activate your account.'
-      )
-      dispatch(reset())
-      navigate('/login')
-      return
-    }
-  }, [user, isError, isSuccess, message, navigate, dispatch])
 
   const handleChange = (e) => {
     setFormData((prevState) => {

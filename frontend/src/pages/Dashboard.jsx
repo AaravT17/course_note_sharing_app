@@ -2,7 +2,7 @@ import Navbar from '../components/Navbar.jsx'
 import Hero from '../components/Hero.jsx'
 import NotesGrid from '../components/NotesGrid.jsx'
 import { useSelector, useDispatch } from 'react-redux'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { reset } from '../features/user/userSlice.js'
@@ -10,11 +10,23 @@ import { reset } from '../features/user/userSlice.js'
 function Dashboard() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { user, isError } = useSelector((state) => state.user)
+
+  const { user, isError, isSuccess, message } = useSelector(
+    (state) => state.user
+  )
+
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!user && isError) {
       toast.error('Session expired. Please log in again.')
+      dispatch(reset())
+      navigate('/login')
+      return
+    }
+
+    if (isSuccess && !user) {
+      toast.success('Logout successful!')
       dispatch(reset())
       navigate('/login')
       return
@@ -25,19 +37,21 @@ function Dashboard() {
       navigate('/login')
       return
     }
-  }, [user, isError, navigate, dispatch])
+  }, [user, isError, isSuccess, message, navigate, dispatch])
 
   return (
     <>
       {user ? (
         <>
-          <Navbar />
+          <Navbar loading={loading} />
           <Hero />
           <NotesGrid
             notesGridTitle="Recently Viewed"
             notes={user.recentlyViewedNotes}
             error={false}
             setNotes={() => {}}
+            loading={loading}
+            setLoading={setLoading}
           />
           {/* TODO: Add a 'You might be interested in' section, will also require an additional route in the backend */}
         </>

@@ -1,5 +1,4 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { setRecentlyViewedNotes } from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
@@ -15,12 +14,11 @@ import {
   Trash,
 } from 'lucide-react'
 
-function Note({ note, setNotes }) {
+function Note({ note, setNotes, loading = false, setLoading }) {
   const dispatch = useDispatch()
-  const { user } = useSelector((state) => state.user)
-  const [isLoading, setIsLoading] = useState(false)
+  const { user, isLoading } = useSelector((state) => state.user)
 
-  const isMyNote = user._id.toString() === note.user._id.toString()
+  const isMyNote = user._id.toString() === note.user?._id?.toString()
 
   // const isLiked = user.likedNotes.some(
   //   (id) => id.toString() === note._id.toString()
@@ -34,8 +32,8 @@ function Note({ note, setNotes }) {
 
   const handleViewNote = async (e) => {
     e.stopPropagation()
-    if (isLoading) return
-    setIsLoading(true)
+    if (loading || isLoading) return
+    setLoading(true)
     try {
       const responseFile = await axiosPrivate.get(
         `/api/notes/${note._id.toString()}/view`,
@@ -61,14 +59,15 @@ function Note({ note, setNotes }) {
     } catch (error) {
       toast.error('Failed to view note. Please try again later.')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   const handleDeleteNote = async (e) => {
     e.stopPropagation()
+    if (loading || isLoading) return
     if (!window.confirm('Are you sure you want to delete this note?')) return
-    setIsLoading(true)
+    setLoading(true)
     try {
       await axiosPrivate.delete(`/api/users/me/notes/${note._id.toString()}`)
       setNotes((prevNotes) =>
@@ -80,7 +79,7 @@ function Note({ note, setNotes }) {
     } catch (error) {
       toast.error('Failed to delete note. Please try again later.')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
@@ -103,6 +102,7 @@ function Note({ note, setNotes }) {
     <div
       className="font-body rounded-xl border hover:shadow-md transition p-4 bg-white flex justify-between gap-4"
       onClick={handleViewNote}
+      disabled={loading || isLoading}
     >
       {/* Left Column */}
       <div className="flex flex-col gap-2 min-w-0 w-full">
@@ -142,14 +142,14 @@ function Note({ note, setNotes }) {
             <button
               className="flex items-center gap-1 hover:text-blue-600 transition"
               onClick={handleLikeNote}
-              disabled={isLoading}
+              disabled={loading || isLoading}
             >
               <ThumbsUp className="w-4 h-4" /> {note.likes || 0}
             </button>
             <button
               className="flex items-center gap-1 hover:text-red-600 transition"
               onClick={handleDislikeNote}
-              disabled={isLoading}
+              disabled={loading || isLoading}
             >
               <ThumbsDown className="w-4 h-4" /> {note.dislikes || 0}
             </button>
@@ -164,7 +164,7 @@ function Note({ note, setNotes }) {
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Edit Note"
             onClick={handleEditNote}
-            disabled={isLoading}
+            disabled={loading || isLoading}
           >
             <Pencil className="w-4 h-4 text-gray-600" />
           </button> */}
@@ -172,7 +172,7 @@ function Note({ note, setNotes }) {
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Delete Note"
             onClick={handleDeleteNote}
-            disabled={isLoading}
+            disabled={loading || isLoading}
           >
             <Trash className="w-4 h-4 text-red-600" />
           </button>

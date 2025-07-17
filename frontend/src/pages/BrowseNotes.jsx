@@ -15,11 +15,21 @@ function BrowseNotes() {
   const notesData = useLoaderData()
   const [notes, setNotes] = useState(notesData.notes)
   const [error, setError] = useState(notesData.error)
-  const { user, isError } = useSelector((state) => state.user)
+  const [loading, setLoading] = useState(false)
+  const { user, isSuccess, isError, message } = useSelector(
+    (state) => state.user
+  )
 
   useEffect(() => {
     if (!user && isError) {
       toast.error('Session expired. Please log in again.')
+      dispatch(reset())
+      navigate('/login')
+      return
+    }
+
+    if (isSuccess && !user) {
+      toast.success('Logout successful!')
       dispatch(reset())
       navigate('/login')
       return
@@ -30,24 +40,28 @@ function BrowseNotes() {
       navigate('/login')
       return
     }
-  }, [user, isError, navigate, dispatch])
+  }, [user, isError, isSuccess, message, navigate, dispatch])
 
   return (
     <>
       {user ? (
         <>
-          <Navbar />
+          <Navbar loading={loading} />
           <NotesSearchBar
             searchBarTitle="Browse Notes"
             apiRoute="/api/notes"
             setNotes={setNotes}
             setError={setError}
+            loading={loading}
+            setLoading={setLoading}
           />
           <NotesGrid
             notesGridTitle="Results"
             notes={notes}
             error={error}
             setNotes={setNotes}
+            loading={loading}
+            setLoading={setLoading}
           />
         </>
       ) : (

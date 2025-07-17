@@ -1,10 +1,9 @@
 import { Mail, Lock } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { reset, login } from '../features/user/userSlice.js'
+import { login } from '../features/user/userSlice.js'
 
 function LoginForm() {
   const [formData, setFormData] = useState({
@@ -14,26 +13,11 @@ function LoginForm() {
 
   const { email, password } = formData
 
-  const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const { user, isError, isSuccess, isLoading, message } = useSelector(
     (state) => state.user
   )
-
-  useEffect(() => {
-    if (user) {
-      navigate('/')
-      dispatch(reset())
-      return
-    }
-
-    if (isError) {
-      toast.error(message)
-      dispatch(reset())
-      return
-    }
-  }, [user, isError, isSuccess, message, navigate, dispatch])
 
   const handleChange = (e) => {
     setFormData((prevState) => {
