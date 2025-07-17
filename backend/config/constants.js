@@ -7,3 +7,5 @@ export const VERIFICATION_LINK_EXPIRY_HRS = 24
 export const ACCESS_TOKEN_EXPIRY_MINS = 15
 
 export const REFRESH_TOKEN_EXPIRY_DAYS = 7
+
+export const MIN_PASSWORD_LENGTH = 10
