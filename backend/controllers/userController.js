@@ -95,24 +95,22 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route GET /api/users/verify
 // @access Public
 const verifyUser = asyncHandler(async (req, res) => {
-  // TODO: Change all responses to redirect the user to the login page upon
-  // success or in case the user's account has already been verified, or to a
-  // 'Something went wrong' page with an appropriate message in case of an error
+  const frontendBaseUrl =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/'
+      : process.env.FRONTEND_BASE_URL
   if (!req.query || !req.query.userId || !req.query.token) {
-    res.status(400)
-    throw new Error('Bad request')
+    return res.redirect(`${frontendBaseUrl}verify/invalid`)
   }
 
   const user = await User.findById(req.query.userId.trim())
 
   if (!user) {
-    res.status(400)
-    throw new Error('User not found')
+    return res.redirect(`${frontendBaseUrl}verify/invalid`)
   }
 
   if (user.isVerified) {
-    res.status(400)
-    throw new Error('Email has already been verified')
+    return res.redirect(`${frontendBaseUrl}verify/already-verified`)
   }
 
   if (!user.verificationToken) {
@@ -121,10 +119,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    res.status(400)
-    throw new Error(
-      'Something went wrong while registering your account, please re-register your account'
-    )
+    return res.redirect(`${frontendBaseUrl}verify/internal-error`)
   }
 
   const hashedToken = hashVerificationToken(req.query.token.trim())
@@ -135,10 +130,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    res.status(400)
-    throw new Error(
-      'Invalid verification link, please re-register your account'
-    )
+    return res.redirect(`${frontendBaseUrl}verify/invalid`)
   }
 
   if (user.verificationTokenExpiry < Date.now()) {
@@ -147,19 +139,14 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    res.status(400)
-    throw new Error(
-      'Verification link has expired, please re-register your account'
-    )
+    return res.redirect(`${frontendBaseUrl}verify/expired`)
   }
 
   user.isVerified = true
   user.verificationToken = undefined
   user.verificationTokenExpiry = undefined
   await user.save()
-  res.status(200).json({
-    message: 'Your email has been verified',
-  })
+  return res.redirect(`${frontendBaseUrl}verify/success`)
 })
 
 // @desc Login user
