@@ -1,6 +1,10 @@
 import axios from 'axios'
-import { store } from '../app/store.js'
-import { resetUser, setAccessToken } from '../features/user/userSlice.js'
+import store from '../app/store.js'
+import {
+  resetUser,
+  setError,
+  setAccessToken,
+} from '../features/user/userSlice.js'
 
 const axiosPrivate = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || '',
@@ -53,6 +57,7 @@ axiosPrivate.interceptors.response.use(
           )
         } catch (logoutError) {}
         store.dispatch(resetUser())
+        store.dispatch(setError(true))
         return Promise.reject(refreshError)
       }
     }

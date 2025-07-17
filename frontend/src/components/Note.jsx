@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import { updateRecentNotes } from '../features/user/userSlice.js'
+import { setRecentlyViewedNotes } from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
 
 import {
@@ -37,15 +37,27 @@ function Note({ note, setNotes }) {
     if (isLoading) return
     setIsLoading(true)
     try {
-      const response = await axiosPrivate.get(
+      const responseFile = await axiosPrivate.get(
         `/api/notes/${note._id.toString()}/view`,
         {
           responseType: 'blob',
         }
       )
-      const blobUrl = URL.createObjectURL(response.data)
+      const blobUrl = URL.createObjectURL(responseFile.data)
       window.open(blobUrl, '_blank')
-      dispatch(updateRecentNotes(note))
+      const updatedNotes = [
+        note,
+        ...user.recentlyViewedNotes.filter(
+          (recentNote) => recentNote._id.toString() !== note._id.toString()
+        ),
+      ].slice(0, 10)
+
+      const responseRecentNotes = await axiosPrivate.put('/api/users/me', {
+        recentlyViewedNotes: updatedNotes.map((note) => note._id),
+      })
+      dispatch(
+        setRecentlyViewedNotes(responseRecentNotes.data.recentlyViewedNotes)
+      )
     } catch (error) {
       toast.error('Failed to view note. Please try again later.')
     } finally {

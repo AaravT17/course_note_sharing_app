@@ -12,11 +12,11 @@ function UploadNotesForm() {
   const dispatch = useDispatch()
 
   const [selectedFiles, setSelectedFiles] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [isError, setIsError] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState(false)
 
-  const { user } = useSelector((state) => state.user)
+  const { user, isError } = useSelector((state) => state.user)
 
   const [notesMetadata, setNotesMetadata] = useState({
     university: '',
@@ -89,16 +89,16 @@ function UploadNotesForm() {
   }
 
   const handleUpload = async (e) => {
-    setIsLoading(true)
+    setLoading(true)
     e.preventDefault()
     if (university.trim() === '' || courseCode.trim() === '') {
       toast.error('Please fill in all fields')
-      setIsLoading(false)
+      setLoading(false)
       return
     }
     if (selectedFiles.length === 0) {
       toast.error('Please select at least one file to upload')
-      setIsLoading(false)
+      setLoading(false)
       return
     }
     const formData = new FormData()
@@ -114,37 +114,30 @@ function UploadNotesForm() {
           'Content-Type': 'multipart/form-data',
         },
       })
-      setIsSuccess(true)
+      setSuccess(true)
     } catch (error) {
-      setIsError(true)
+      setError(true)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (!user) {
-      toast.error('Session expired. Please log in again.')
-      dispatch(reset())
-      navigate('/login')
-      return
-    }
-
-    if (isSuccess) {
+    if (success) {
       toast.success('Notes uploaded successfully!')
-      setIsSuccess(false)
+      setSuccess(false)
       setSelectedFiles([])
       setNotesMetadata({ university: '', courseCode: '', isAnonymous: false })
       navigate('/my-notes')
       return
     }
 
-    if (isError) {
+    if (error) {
       toast.error('Failed to upload notes. Please try again.')
-      setIsError(false)
+      setError(false)
       return
     }
-  }, [user, isSuccess, isError, navigate, dispatch])
+  }, [user, isError, navigate, dispatch])
 
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gray-50 px-4">
@@ -171,7 +164,7 @@ function UploadNotesForm() {
               name="university"
               value={university}
               onChange={handleInputChange}
-              disabled={isLoading}
+              disabled={loading}
               required
               placeholder="e.g. University of Toronto"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -192,7 +185,7 @@ function UploadNotesForm() {
               name="courseCode"
               value={courseCode}
               onChange={handleInputChange}
-              disabled={isLoading}
+              disabled={loading}
               required
               placeholder="e.g. CSC263"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -213,7 +206,7 @@ function UploadNotesForm() {
               name="note"
               accept="application/pdf"
               onChange={handleFileChange}
-              disabled={isLoading}
+              disabled={loading}
               multiple
               required
               className="w-full border border-gray-300 rounded-md px-3 py-2 file:bg-blue-800 file:mr-2 file:text-white file:px-4 file:py-2 file:hover:bg-blue-700 file:rounded-md file:border-0 file:cursor-pointer text-gray-400"
@@ -273,7 +266,7 @@ function UploadNotesForm() {
               id="uploadAnonymously"
               name="uploadAnonymously"
               checked={isAnonymous}
-              disabled={isLoading}
+              disabled={loading}
               onChange={handleCheckboxChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
@@ -288,7 +281,7 @@ function UploadNotesForm() {
           <button
             type="submit"
             className="w-full bg-blue-800 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition"
-            disabled={selectedFiles.length === 0 || isLoading}
+            disabled={selectedFiles.length === 0 || loading}
           >
             Upload
           </button>

@@ -43,7 +43,7 @@ export const login = createAsyncThunk(
   }
 )
 
-export const logout = createAsyncThunk('user/logout', async () => {
+export const logout = createAsyncThunk('user/logout', async (_, thunkAPI) => {
   try {
     return await userService.logout()
   } catch (error) {
@@ -54,23 +54,6 @@ export const logout = createAsyncThunk('user/logout', async () => {
     return thunkAPI.rejectWithValue(message)
   }
 })
-
-export const updateRecentNotes = createAsyncThunk(
-  'user/updateRecentNotes',
-  async (note, thunkAPI) => {
-    try {
-      return await userService.updateRecentNotes(note)
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString()
-      return thunkAPI.rejectWithValue(message)
-    }
-  }
-)
 
 export const userSlice = createSlice({
   name: 'user',
@@ -84,6 +67,15 @@ export const userSlice = createSlice({
     },
     resetUser: (state) => {
       state.user = null
+    },
+    setError: (state, action) => {
+      state.isError = action.payload
+    },
+    setRecentlyViewedNotes: (state, action) => {
+      state.user = {
+        ...state.user,
+        recentlyViewedNotes: action.payload,
+      }
     },
     setAccessToken: (state, action) => {
       state.user = {
@@ -132,11 +124,14 @@ export const userSlice = createSlice({
         state.isError = true
         state.message = action.payload
       })
-      .addCase(updateRecentNotes.fulfilled, (state, action) => {
-        state.user = { ...state.user, ...action.payload }
-      })
   },
 })
 
-export const { reset, resetUser, setAccessToken } = userSlice.actions
+export const {
+  reset,
+  resetUser,
+  setError,
+  setRecentlyViewedNotes,
+  setAccessToken,
+} = userSlice.actions
 export default userSlice.reducer
