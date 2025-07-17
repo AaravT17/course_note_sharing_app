@@ -42,7 +42,7 @@ const sendVerificationEmail = async (toEmail, verificationLink) => {
   })
 
   const mailOptions = {
-    from: `Course Note Sharing App <${process.env.EMAIL_FROM}>`,
+    from: `Noteable <${process.env.EMAIL_FROM}>`,
     to: toEmail,
     subject: 'Verify your account',
     html: `<p>Please verify your account by clicking the link: <a href="${verificationLink}">Verify Account</a></p>`,

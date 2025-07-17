@@ -97,20 +97,20 @@ const registerUser = asyncHandler(async (req, res) => {
 const verifyUser = asyncHandler(async (req, res) => {
   const frontendBaseUrl =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/'
+      ? 'http://localhost:3000'
       : process.env.FRONTEND_BASE_URL
   if (!req.query || !req.query.userId || !req.query.token) {
-    return res.redirect(`${frontendBaseUrl}verify/invalid`)
+    return res.redirect(`${frontendBaseUrl}/verify/invalid`)
   }
 
   const user = await User.findById(req.query.userId.trim())
 
   if (!user) {
-    return res.redirect(`${frontendBaseUrl}verify/invalid`)
+    return res.redirect(`${frontendBaseUrl}/verify/invalid`)
   }
 
   if (user.isVerified) {
-    return res.redirect(`${frontendBaseUrl}verify/already-verified`)
+    return res.redirect(`${frontendBaseUrl}/verify/already-verified`)
   }
 
   if (!user.verificationToken) {
@@ -119,7 +119,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    return res.redirect(`${frontendBaseUrl}verify/internal-error`)
+    return res.redirect(`${frontendBaseUrl}/verify/internal-error`)
   }
 
   const hashedToken = hashVerificationToken(req.query.token.trim())
@@ -130,7 +130,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    return res.redirect(`${frontendBaseUrl}verify/invalid`)
+    return res.redirect(`${frontendBaseUrl}/verify/invalid`)
   }
 
   if (user.verificationTokenExpiry < Date.now()) {
@@ -139,14 +139,14 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    return res.redirect(`${frontendBaseUrl}verify/expired`)
+    return res.redirect(`${frontendBaseUrl}/verify/expired`)
   }
 
   user.isVerified = true
   user.verificationToken = undefined
   user.verificationTokenExpiry = undefined
   await user.save()
-  return res.redirect(`${frontendBaseUrl}verify/success`)
+  return res.redirect(`${frontendBaseUrl}/verify/success`)
 })
 
 // @desc Login user
