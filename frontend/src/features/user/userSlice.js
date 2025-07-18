@@ -77,6 +77,13 @@ export const userSlice = createSlice({
         recentlyViewedNotes: action.payload,
       }
     },
+    setLikedAndDislikedNotes: (state, action) => {
+      state.user = {
+        ...state.user,
+        likedNotes: action.payload.likedNotes,
+        dislikedNotes: action.payload.dislikedNotes,
+      }
+    },
     setAccessToken: (state, action) => {
       state.user = {
         ...state.user,
@@ -131,6 +138,7 @@ export const {
   resetUser,
   setError,
   setRecentlyViewedNotes,
+  setLikedAndDislikedNotes,
   setAccessToken,
 } = userSlice.actions
 export default userSlice.reducer

@@ -153,6 +153,101 @@ const uploadNotes = asyncHandler(async (req, res) => {
   res.status(201).json(savedNotes)
 })
 
+// @desc Like/dislike a note
+// @route PATCH /api/notes/:id/rating
+// @access Private
+const updateNoteRating = asyncHandler(async (req, res) => {
+  if (!req.body || (!req.body.likes && !req.body.dislikes)) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+  const note = await Note.findById(req.params.id)
+  if (!note) {
+    res.status(404)
+    throw new Error('Note not found')
+  }
+  const prevLikes = note.likes
+  const prevDislikes = note.dislikes
+  if (req.body.likes) {
+    if (req.body.likes === '+') {
+      note.likes += 1
+    } else if (req.body.likes === '-' && note.likes > 0) {
+      note.likes -= 1
+    }
+  }
+  if (req.body.dislikes) {
+    if (req.body.dislikes === '+') {
+      note.dislikes += 1
+    } else if (req.body.dislikes === '-' && note.dislikes > 0) {
+      note.dislikes -= 1
+    }
+  }
+  const userPrevLikedNotes = req.user.likedNotes || []
+  const userPrevDislikedNotes = req.user.dislikedNotes || []
+  // Update user's like and dislike history
+  if (req.body.likes === '+') {
+    req.user.likedNotes = [
+      note._id,
+      ...req.user.likedNotes.filter(
+        (id) => id.toString() !== note._id.toString()
+      ),
+    ]
+  } else if (req.body.likes === '-') {
+    req.user.likedNotes = req.user.likedNotes.filter(
+      (id) => id.toString() !== note._id.toString()
+    )
+  }
+  if (req.body.dislikes === '+') {
+    req.user.dislikedNotes = [
+      note._id,
+      ...req.user.dislikedNotes.filter(
+        (id) => id.toString() !== note._id.toString()
+      ),
+    ]
+  } else if (req.body.dislikes === '-') {
+    req.user.dislikedNotes = req.user.dislikedNotes.filter(
+      (id) => id.toString() !== note._id.toString()
+    )
+  }
+  try {
+    let updatedUser
+    let updatedNote
+    try {
+      updatedUser = await req.user.save()
+    } catch (userSaveError) {
+      throw new Error('USER_SAVE_ERROR')
+    }
+    try {
+      updatedNote = await note.save()
+    } catch (noteSaveError) {
+      throw new Error('NOTE_SAVE_ERROR')
+    }
+    res.status(200).json({
+      likes: updatedNote.likes,
+      dislikes: updatedNote.dislikes,
+      likedNotes: updatedUser.likedNotes,
+      dislikedNotes: updatedUser.dislikedNotes,
+    })
+  } catch (error) {
+    if (error.message === 'USER_SAVE_ERROR') {
+      note.likes = prevLikes
+      note.dislikes = prevDislikes
+      try {
+        await note.save()
+      } catch (_) {}
+    } else if (error.message === 'NOTE_SAVE_ERROR') {
+      req.user.likedNotes = userPrevLikedNotes
+      req.user.dislikedNotes = userPrevDislikedNotes
+      try {
+        await req.user.save()
+      } catch (_) {}
+    }
+    throw new Error(
+      "Failed to update note's likes and dislikes, please try again"
+    )
+  }
+})
+
 // @desc Get current user's notes
 // @route GET /api/users/me/notes
 // @access Private
@@ -265,6 +360,7 @@ export {
   getNotesMetadata,
   getNoteFile,
   uploadNotes,
+  updateNoteRating,
   getMyNotes,
   updateMyNote,
   deleteMyNote,

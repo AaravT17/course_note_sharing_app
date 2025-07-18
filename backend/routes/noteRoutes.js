@@ -5,6 +5,7 @@ import {
   getNotesMetadata,
   getNoteFile,
   uploadNotes,
+  updateNoteRating,
 } from '../controllers/noteController.js'
 import { storage } from '../config/upload.js'
 import { authenticateUser } from '../middleware/authMiddleware.js'
@@ -38,5 +39,7 @@ router.get('/', authenticateUser, getNotesMetadata)
 router.get('/:id/view', authenticateUser, getNoteFile)
 
 router.post('/', authenticateUser, upload.array('note', MAX_FILES), uploadNotes)
+
+router.patch('/:id/rating', authenticateUser, updateNoteRating)
 
 export default router

@@ -1,6 +1,9 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
-import { setRecentlyViewedNotes } from '../features/user/userSlice.js'
+import {
+  setRecentlyViewedNotes,
+  setLikedAndDislikedNotes,
+} from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
 import { MAX_RECENT_NOTES } from '../config/constants.js'
 
@@ -14,7 +17,6 @@ import {
   Pencil,
   Trash,
 } from 'lucide-react'
-import { MAX } from 'uuid'
 
 function Note({ note, setNotes, loading = false, setLoading }) {
   const dispatch = useDispatch()
@@ -22,15 +24,13 @@ function Note({ note, setNotes, loading = false, setLoading }) {
 
   const isMyNote = user._id.toString() === note.user?._id?.toString()
 
-  // const isLiked = user.likedNotes.some(
-  //   (id) => id.toString() === note._id.toString()
-  // )
+  const isLiked = user.likedNotes.some(
+    (id) => id.toString() === note._id.toString()
+  )
 
-  // const isDisliked = user.dislikedNotes.some(
-  //   (id) => id.toString() === note._id.toString()
-  // )
-
-  // TODO: Add liking and disliking functionality, and edit the global user's liked and disliked notes
+  const isDisliked = user.dislikedNotes.some(
+    (id) => id.toString() === note._id.toString()
+  )
 
   const handleViewNote = async (e) => {
     e.stopPropagation()
@@ -90,14 +90,74 @@ function Note({ note, setNotes, loading = false, setLoading }) {
   //   console.log('Edit')
   // }
 
-  const handleLikeNote = (e) => {
+  const handleLikeNote = async (e) => {
     e.stopPropagation()
-    console.log('Like')
+    if (loading || isLoading) return
+    setLoading(true)
+    try {
+      const response = await axiosPrivate.patch(
+        `/api/notes/${note._id.toString()}/rating`,
+        {
+          likes: isLiked ? '-' : '+',
+          ...(isDisliked && { dislikes: '-' }),
+        }
+      )
+      dispatch(setLikedAndDislikedNotes(response.data))
+      setNotes((prevNotes) =>
+        prevNotes.map((prevNote) =>
+          prevNote._id.toString() === note._id.toString()
+            ? {
+                ...prevNote,
+                likes: response.data.likes,
+                dislikes: response.data.dislikes,
+              }
+            : prevNote
+        )
+      )
+    } catch (error) {
+      toast.error(
+        isLiked
+          ? 'Failed to remove like from note. Please try again later.'
+          : 'Failed to like note. Please try again later.'
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDislikeNote = (e) => {
+  const handleDislikeNote = async (e) => {
     e.stopPropagation()
-    console.log('Dislike')
+    if (loading || isLoading) return
+    setLoading(true)
+    try {
+      const response = await axiosPrivate.patch(
+        `/api/notes/${note._id.toString()}/rating`,
+        {
+          ...(isLiked && { likes: '-' }),
+          dislikes: isDisliked ? '-' : '+',
+        }
+      )
+      dispatch(setLikedAndDislikedNotes(response.data))
+      setNotes((prevNotes) =>
+        prevNotes.map((prevNote) =>
+          prevNote._id.toString() === note._id.toString()
+            ? {
+                ...prevNote,
+                likes: response.data.likes,
+                dislikes: response.data.dislikes,
+              }
+            : prevNote
+        )
+      )
+    } catch (error) {
+      toast.error(
+        isDisliked
+          ? 'Failed to remove dislike from note. Please try again later.'
+          : 'Failed to dislike note. Please try again later.'
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -126,11 +186,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
           </span>
           <span className="flex items-center gap-1">
             <User className="w-4 h-4" />{' '}
-            {isMyNote
-              ? user.name
-              : note.isAnonymous
-              ? '-'
-              : note.user?.name || '-'}
+            {isMyNote ? 'You' : note.isAnonymous ? '-' : note.user?.name || '-'}
           </span>
           <span className="flex items-center gap-1 text-gray-400 text-xs mt-1">
             <Clock className="w-4 h-4" />{' '}
@@ -142,14 +198,18 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         {!isMyNote && (
           <div className="flex gap-4 mt-2 items-center text-sm text-gray-600">
             <button
-              className="flex items-center gap-1 hover:text-blue-600 transition"
+              className={`flex items-center gap-1 transition ${
+                isLiked ? 'text-blue-600' : 'hover:text-blue-600'
+              }`}
               onClick={handleLikeNote}
               disabled={loading || isLoading}
             >
               <ThumbsUp className="w-4 h-4" /> {note.likes || 0}
             </button>
             <button
-              className="flex items-center gap-1 hover:text-red-600 transition"
+              className={`flex items-center gap-1 transition ${
+                isDisliked ? 'text-red-600' : 'hover:text-red-600'
+              }`}
               onClick={handleDislikeNote}
               disabled={loading || isLoading}
             >
