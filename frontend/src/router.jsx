@@ -10,7 +10,6 @@ import UploadNotes from './pages/UploadNotes.jsx'
 import VerifySuccess from './pages/VerifySuccess.jsx'
 import VerifyExpired from './pages/VerifyExpired.jsx'
 import VerifyInvalid from './pages/VerifyInvalid.jsx'
-import VerifyAlreadyVerified from './pages/VerifyAlreadyVerified.jsx'
 import VerifyInternalError from './pages/VerifyInternalError.jsx'
 
 const router = createBrowserRouter([
