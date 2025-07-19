@@ -73,7 +73,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
     setShowDeleteConfirm(true)
   }
 
-  const confirmDeleteNote = async (e) => {
+  const handleConfirmDeleteNote = async (e) => {
     e.stopPropagation()
     if (loading || isLoading) return
     setLoading(true)
@@ -239,10 +239,10 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         {/* Metadata */}
         <div className="text-sm text-gray-600 flex flex-col gap-1">
           <span className="flex items-center gap-1">
-            <BookOpenText className="w-4 h-4" /> {note.courseCode}
+            <GraduationCap className="w-4 h-4" /> {note.university}
           </span>
           <span className="flex items-center gap-1">
-            <GraduationCap className="w-4 h-4" /> {note.university}
+            <BookOpenText className="w-4 h-4" /> {note.courseCode}
           </span>
           <span className="flex items-center gap-1">
             <User className="w-4 h-4" />{' '}
@@ -255,28 +255,27 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         </div>
 
         {/* Rating Buttons */}
-        {!isMyNote && (
-          <div className="flex gap-4 mt-2 items-center text-sm text-gray-600">
-            <button
-              className={`flex items-center gap-1 transition ${
-                isLiked ? 'text-blue-600' : 'hover:text-blue-600'
-              }`}
-              onClick={handleLikeNote}
-              disabled={loading || isLoading || showDeleteConfirm}
-            >
-              <ThumbsUp className="w-4 h-4" /> {note.likes || 0}
-            </button>
-            <button
-              className={`flex items-center gap-1 transition ${
-                isDisliked ? 'text-red-600' : 'hover:text-red-600'
-              }`}
-              onClick={handleDislikeNote}
-              disabled={loading || isLoading || showDeleteConfirm}
-            >
-              <ThumbsDown className="w-4 h-4" /> {note.dislikes || 0}
-            </button>
-          </div>
-        )}
+
+        <div className="flex gap-4 mt-2 items-center text-sm text-gray-600">
+          <button
+            className={`flex items-center gap-1 transition ${
+              isLiked ? 'text-blue-600' : isMyNote ? '' : 'hover:text-blue-600'
+            }`}
+            onClick={handleLikeNote}
+            disabled={loading || isLoading || isMyNote || showDeleteConfirm}
+          >
+            <ThumbsUp className="w-4 h-4" /> {note.likes || 0}
+          </button>
+          <button
+            className={`flex items-center gap-1 transition ${
+              isDisliked ? 'text-red-600' : isMyNote ? '' : 'hover:text-red-600'
+            }`}
+            onClick={handleDislikeNote}
+            disabled={loading || isLoading || isMyNote || showDeleteConfirm}
+          >
+            <ThumbsDown className="w-4 h-4" /> {note.dislikes || 0}
+          </button>
+        </div>
       </div>
 
       {/* Right Column: Edit/Delete */}
@@ -327,7 +326,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
                 Cancel
               </button>
               <button
-                onClick={confirmDeleteNote}
+                onClick={handleConfirmDeleteNote}
                 className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700"
               >
                 Delete
