@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import BrowseNotes, { getBrowseNotes } from './pages/BrowseNotes.jsx'
 import MyNotes, { getMyNotes } from './pages/MyNotes.jsx'
 import UploadNotes from './pages/UploadNotes.jsx'
@@ -15,6 +17,8 @@ const router = createBrowserRouter([
   { path: '/', element: <Dashboard /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
+  { path: '/forgot-password', element: <ForgotPassword /> },
+  { path: '/reset-password', element: <ResetPassword /> },
   { path: '/browse', element: <BrowseNotes />, loader: getBrowseNotes },
   { path: '/my-notes', element: <MyNotes />, loader: getMyNotes },
   { path: '/upload', element: <UploadNotes /> },
@@ -23,7 +27,6 @@ const router = createBrowserRouter([
   { path: '/verify/success', element: <VerifySuccess /> },
   { path: '/verify/expired', element: <VerifyExpired /> },
   { path: '/verify/invalid', element: <VerifyInvalid /> },
-  { path: '/verify/already-verified', element: <VerifyAlreadyVerified /> },
   { path: '/verify/internal-error', element: <VerifyInternalError /> },
 ])
 

@@ -55,7 +55,7 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
     console.log(error)
     throw error
   }
-  // TODO: Add pagination, more filters e.g., sort alphabetically, date added, etc.
+  // TODO: Add pagination, sorting options
 })
 
 // @desc Get note file (PDF)

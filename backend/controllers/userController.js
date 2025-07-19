@@ -11,13 +11,16 @@ import {
   generateAccessToken,
   generateRefreshToken,
   isStrongPassword,
-  hashVerificationToken,
+  hashToken,
   sendVerificationEmail,
+  sendPasswordResetEmail,
 } from '../utils/userUtils.js'
 import {
   VERIFICATION_LINK_EXPIRY_HRS,
   REFRESH_TOKEN_EXPIRY_DAYS,
+  PASSWORD_RESET_EXPIRY_MINS,
   MAX_RECENT_NOTES,
+  MIN_PASSWORD_LENGTH,
 } from '../config/constants.js'
 
 // @desc Register user, pending verification
@@ -48,7 +51,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!isStrongPassword(password)) {
     res.status(400)
     throw new Error(
-      'Password must be at least 12 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character'
+      `Password must be at least ${MIN_PASSWORD_LENGTH} characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character`
     )
   }
 
@@ -63,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const token = crypto.randomBytes(32).toString('hex')
 
-  const hashedToken = hashVerificationToken(token)
+  const hashedToken = hashToken(token)
 
   try {
     const user = await User.create({
@@ -76,9 +79,7 @@ const registerUser = asyncHandler(async (req, res) => {
       ),
     })
 
-    const verificationLink = `${
-      process.env.BACKEND_BASE_URL
-    }/api/users/verify?userId=${user._id.toString()}&token=${token}`
+    const verificationLink = `${process.env.VITE_BACKEND_BASE_URL}/api/users/verify?token=${token}`
 
     await sendVerificationEmail(email, verificationLink)
 
@@ -99,38 +100,16 @@ const verifyUser = asyncHandler(async (req, res) => {
   const frontendBaseUrl =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000'
-      : process.env.FRONTEND_BASE_URL
-  if (!req.query || !req.query.userId || !req.query.token) {
+      : import.meta.env.VITE_FRONTEND_BASE_URL
+  if (!req.query || !req.query.token) {
     return res.redirect(`${frontendBaseUrl}/verify/invalid`)
   }
 
-  const user = await User.findById(req.query.userId.trim())
+  const user = await User.findOne({
+    verificationToken: hashToken(req.query.token.trim()),
+  })
 
   if (!user) {
-    return res.redirect(`${frontendBaseUrl}/verify/invalid`)
-  }
-
-  if (user.isVerified) {
-    return res.redirect(`${frontendBaseUrl}/verify/already-verified`)
-  }
-
-  if (!user.verificationToken) {
-    try {
-      await user.deleteOne()
-    } catch (error) {
-      console.log(`Could not delete user ${user._id.toString()}`)
-    }
-    return res.redirect(`${frontendBaseUrl}/verify/internal-error`)
-  }
-
-  const hashedToken = hashVerificationToken(req.query.token.trim())
-
-  if (hashedToken !== user.verificationToken) {
-    try {
-      await user.deleteOne()
-    } catch (error) {
-      console.log(`Could not delete user ${user._id.toString()}`)
-    }
     return res.redirect(`${frontendBaseUrl}/verify/invalid`)
   }
 
@@ -146,8 +125,13 @@ const verifyUser = asyncHandler(async (req, res) => {
   user.isVerified = true
   user.verificationToken = undefined
   user.verificationTokenExpiry = undefined
-  await user.save()
-  return res.redirect(`${frontendBaseUrl}/verify/success`)
+  try {
+    await user.save()
+    return res.redirect(`${frontendBaseUrl}/verify/success`)
+  } catch (error) {
+    console.log(error)
+    return res.redirect(`${frontendBaseUrl}/verify/internal-error`)
+  }
 })
 
 // @desc Login user
@@ -237,6 +221,105 @@ const logoutUser = asyncHandler(async (req, res) => {
   })
 
   res.status(204).end()
+})
+
+// @desc Send password reset email
+// @route POST /api/users/forgot-password
+// @access Public
+const forgotPassword = asyncHandler(async (req, res) => {
+  if (!req.body || !req.body.email) {
+    res.status(400)
+    throw new Error('Missing fields')
+  }
+
+  const email = req.body.email.trim().toLowerCase()
+
+  const user = await User.findOne({ email })
+
+  if (!user) {
+    return res.status(200).json({
+      message:
+        'If this email is registered, a password reset link has been sent',
+    })
+  }
+
+  const token = crypto.randomBytes(32).toString('hex')
+  user.passwordResetToken = hashToken(token)
+  user.passwordResetTokenExpiry = new Date(
+    Date.now() + 1000 * 60 * PASSWORD_RESET_EXPIRY_MINS
+  )
+
+  try {
+    await user.save()
+    const passwordResetLink = `${process.env.VITE_FRONTEND_BASE_URL}/reset-password?token=${token}`
+    await sendPasswordResetEmail(email, passwordResetLink)
+  } catch (error) {
+    console.log(error)
+  }
+
+  res.status(200).json({
+    message: 'If this email is registered, a password reset link has been sent',
+  })
+})
+
+// @desc Reset password
+// @route POST /api/users/reset-password
+// @access Public
+const resetPassword = asyncHandler(async (req, res) => {
+  if (!req.body || !req.body.password || !req.body.confirmPassword) {
+    res.status(400)
+    throw new Error('Missing fields')
+  }
+
+  if (!req.query || !req.query.token) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  const password = req.body.password.trim()
+  const confirmPassword = req.body.confirmPassword.trim()
+
+  if (password !== confirmPassword) {
+    res.status(400)
+    throw new Error('Passwords do not match')
+  }
+
+  if (!isStrongPassword(password)) {
+    res.status(400)
+    throw new Error(
+      `Password must be at least ${MIN_PASSWORD_LENGTH} characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character`
+    )
+  }
+
+  const user = await User.findOne({
+    passwordResetToken: hashToken(req.query.token.trim()),
+  })
+
+  if (!user) {
+    res.status(400)
+    throw new Error('Invalid link')
+  }
+
+  if (user.passwordResetTokenExpiry < Date.now()) {
+    res.status(400)
+    throw new Error('Link expired, please request a new password reset link')
+  }
+
+  const salt = await bcrypt.genSalt(10)
+  const hashedPassword = await bcrypt.hash(password, salt)
+
+  user.password = hashedPassword
+  user.passwordResetToken = undefined
+  user.passwordResetTokenExpiry = undefined
+  try {
+    await user.save()
+    res.status(200).json({
+      message: 'Password reset successful!',
+    })
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
 })
 
 // @desc Refresh access token
@@ -361,8 +444,6 @@ const updateMe = asyncHandler(async (req, res) => {
   }
 })
 
-// TODO: Add forgot password functionality
-
 // @desc Delete current user
 // @route DELETE /api/users/me
 // @access Private
@@ -392,6 +473,8 @@ export {
   verifyUser,
   loginUser,
   logoutUser,
+  forgotPassword,
+  resetPassword,
   refreshAccessToken,
   getMe,
   updateMe,

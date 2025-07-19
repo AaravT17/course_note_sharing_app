@@ -29,7 +29,7 @@ const isStrongPassword = (password) => {
   )
 }
 
-const hashVerificationToken = (token) => {
+const hashToken = (token) => {
   return crypto.createHash('sha256').update(token).digest('hex')
 }
 
@@ -59,10 +59,36 @@ const sendVerificationEmail = async (toEmail, verificationLink) => {
   }
 }
 
+const sendPasswordResetEmail = async (toEmail, passwordResetLink) => {
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: process.env.EMAIL_FROM,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  })
+
+  const mailOptions = {
+    from: `Noteable <${process.env.EMAIL_FROM}>`,
+    to: toEmail,
+    subject: 'Reset your password',
+    html: `<p>Please click the link to reset your password: <a href="${passwordResetLink}">Reset password</a></p>`,
+    text: `Please click the link to reset your password: ${passwordResetLink}`,
+  }
+
+  try {
+    await transporter.sendMail(mailOptions)
+    console.log('Password reset email sent successfully')
+  } catch (error) {
+    console.error('Error sending password reset email:', error)
+  }
+}
+
 export {
   generateAccessToken,
   generateRefreshToken,
   isStrongPassword,
-  hashVerificationToken,
+  hashToken,
   sendVerificationEmail,
+  sendPasswordResetEmail,
 }

@@ -8,6 +8,8 @@ export const ACCESS_TOKEN_EXPIRY_MINS = 15
 
 export const REFRESH_TOKEN_EXPIRY_DAYS = 7
 
+export const PASSWORD_RESET_EXPIRY_MINS = 15
+
 export const MIN_PASSWORD_LENGTH = 10
 
 export const MAX_RECENT_NOTES = 20

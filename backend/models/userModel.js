@@ -51,10 +51,17 @@ const userSchema = new mongoose.Schema(
     },
     verificationToken: {
       type: String,
+      index: true,
     },
     verificationTokenExpiry: {
       type: Date,
-      default: () => Date.now() + 1000 * 60 * 60 * VERIFICATION_LINK_EXPIRY_HRS,
+    },
+    passwordResetToken: {
+      type: String,
+      index: true,
+    },
+    passwordResetTokenExpiry: {
+      type: Date,
     },
   },
   {

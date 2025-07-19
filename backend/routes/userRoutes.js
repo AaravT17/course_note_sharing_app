@@ -4,7 +4,9 @@ import {
   verifyUser,
   loginUser,
   logoutUser,
+  forgotPassword,
   refreshAccessToken,
+  resetPassword,
   getMe,
   updateMe,
   deleteMe,
@@ -25,6 +27,10 @@ router.get('/verify', verifyUser)
 router.post('/login', loginUser)
 
 router.post('/logout', logoutUser)
+
+router.post('/forgot-password', forgotPassword)
+
+router.post('/reset-password', resetPassword)
 
 router.post('/auth/refresh', refreshAccessToken)
 
