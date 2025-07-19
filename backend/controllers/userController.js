@@ -17,6 +17,7 @@ import {
 import {
   VERIFICATION_LINK_EXPIRY_HRS,
   REFRESH_TOKEN_EXPIRY_DAYS,
+  MAX_RECENT_NOTES,
 } from '../config/constants.js'
 
 // @desc Register user, pending verification
@@ -184,7 +185,7 @@ const loginUser = asyncHandler(async (req, res) => {
     populate: { path: 'user', select: 'name _id' },
   })
 
-  const notes = user.recentlyViewedNotes
+  const notes = user.recentlyViewedNotes.slice(0, MAX_RECENT_NOTES)
 
   const processedNotes = notes.map((note) => {
     if (note.isAnonymous) {
@@ -218,6 +219,8 @@ const loginUser = asyncHandler(async (req, res) => {
     name: user.name,
     email: user.email,
     recentlyViewedNotes: processedNotes,
+    likedNotes: user.likedNotes,
+    dislikedNotes: user.dislikedNotes,
     accessToken: generateAccessToken(user._id.toString()),
   })
 })
@@ -275,7 +278,7 @@ const getMe = asyncHandler(async (req, res) => {
     populate: { path: 'user', select: 'name _id' },
   })
 
-  const notes = req.user.recentlyViewedNotes
+  const notes = req.user.recentlyViewedNotes.slice(0, MAX_RECENT_NOTES)
 
   const processedNotes = notes.map((note) => {
     if (note.isAnonymous) {
@@ -300,6 +303,8 @@ const getMe = asyncHandler(async (req, res) => {
     name: req.user.name,
     email: req.user.email,
     recentlyViewedNotes: processedNotes,
+    likedNotes: req.user.likedNotes,
+    dislikedNotes: req.user.dislikedNotes,
   })
 })
 
@@ -321,7 +326,7 @@ const updateMe = asyncHandler(async (req, res) => {
       populate: { path: 'user', select: 'name _id' },
     })
 
-    const notes = req.user.recentlyViewedNotes
+    const notes = req.user.recentlyViewedNotes.slice(0, MAX_RECENT_NOTES)
 
     const processedNotes = notes.map((note) => {
       if (note.isAnonymous) {
@@ -343,6 +348,8 @@ const updateMe = asyncHandler(async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       recentlyViewedNotes: processedNotes,
+      likedNotes: updatedUser.likedNotes,
+      dislikedNotes: updatedUser.dislikedNotes,
     })
   } catch (error) {
     console.log(error)
@@ -366,6 +373,12 @@ const deleteMe = asyncHandler(async (req, res, next) => {
       res.status(404)
       return next(new Error('User not found'))
     }
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'None',
+      path: '/',
+    })
     res.status(204).end()
   } catch (error) {
     console.log(error)

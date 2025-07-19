@@ -16,26 +16,28 @@ function Hero() {
     "You’ve got the notes — we’ve got the platform.",
     // prettier-ignore
     "It’s a good day to help someone pass their midterm.",
-    'A better way to study — together.',
     'Contribute what you can. Learn what you need.',
     'Make your effort count — upload and support the community.',
-    'Built for students, powered by students.',
-    'Helping you pass with other people’s effort.',
+    'Give a little help. Get a little back.',
+    'Good things happen to those who share notes.',
+    // prettier-ignore
+    "We're here to help you pass- with other people’s effort.",
     'You took notes? Hero. Legend. Icon.',
     // prettier-ignore
-    "Because professors don't always upload the slides.",
+    "Professor didn’t upload the slides? We’ve got you.",
     // prettier-ignore
-    "Asking for notes is awkward. This isn’t.",
-    "Missed your 9am? We've all been there.",
-    'Study notes: now with 100% less guilt.',
-    'Built for students. Powered by collective stress.',
+    "Felt awkward asking for notes? Don’t worry, you don’t have to.",
+    'Missed your 9am? We’ve all been there.',
     // prettier-ignore
-    "Notes so good, you’ll think you actually went to class.",
+    "Here’s some notes, now with 100% less guilt.",
+    // prettier-ignore
+    "We’ve got notes so good, you’ll think you actually went to class.",
     'Upload notes. Gain karma. Maybe even GPA.',
-    'LeBron? Nah. This is the real finals MVP.',
+    'LeBron? Nah. You could be the real finals MVP, if you share your notes 👀.',
     // prettier-ignore
     "Need coffee? Sorry, we don’t do that. But here’s some notes.",
-    'Crowdsourced academic success.',
+    // prettier-ignore
+    "You've entered the academic black market.",
   ]
 
   const { user } = useSelector((state) => state.user)
@@ -69,7 +71,9 @@ function Hero() {
           <h1 className="text-4xl font-bold text-white">
             Welcome, {user && user.name ? user.name.split(' ')[0] : 'User'}!
           </h1>
-          <p className="text-gray-100 mt-2 text-lg">{subtitle}</p>
+          <p className="text-gray-300 font-heading italic mt-3 text-base">
+            {subtitle}
+          </p>
         </div>
       </section>
     </>

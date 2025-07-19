@@ -1,4 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 import {
   setRecentlyViewedNotes,
@@ -21,6 +22,7 @@ import {
 function Note({ note, setNotes, loading = false, setLoading }) {
   const dispatch = useDispatch()
   const { user, isLoading } = useSelector((state) => state.user)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const isMyNote = user._id.toString() === note.user?._id?.toString()
 
@@ -44,13 +46,13 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         }
       )
       const blobUrl = URL.createObjectURL(responseFile.data)
-      window.open(blobUrl, '_blank')
+      window.open(blobUrl, '_blank', 'noopener,noreferrer')
       const updatedNotes = [
         note,
         ...user.recentlyViewedNotes.filter(
           (recentNote) => recentNote._id.toString() !== note._id.toString()
         ),
-      ].slice(0, MAX_RECENT_NOTES)
+      ]
 
       const responseRecentNotes = await axiosPrivate.put('/api/users/me', {
         recentlyViewedNotes: updatedNotes.map((note) => note._id),
@@ -65,10 +67,15 @@ function Note({ note, setNotes, loading = false, setLoading }) {
     }
   }
 
-  const handleDeleteNote = async (e) => {
+  const handleDeleteClick = (e) => {
     e.stopPropagation()
     if (loading || isLoading) return
-    if (!window.confirm('Are you sure you want to delete this note?')) return
+    setShowDeleteConfirm(true)
+  }
+
+  const confirmDeleteNote = async (e) => {
+    e.stopPropagation()
+    if (loading || isLoading) return
     setLoading(true)
     try {
       await axiosPrivate.delete(`/api/users/me/notes/${note._id.toString()}`)
@@ -77,6 +84,19 @@ function Note({ note, setNotes, loading = false, setLoading }) {
           (prevNote) => prevNote._id.toString() !== note._id.toString()
         )
       )
+      if (
+        user.recentlyViewedNotes.some(
+          (n) => n._id.toString() === note._id.toString()
+        )
+      ) {
+        dispatch(
+          setRecentlyViewedNotes(
+            user.recentlyViewedNotes.filter(
+              (recentNote) => recentNote._id.toString() !== note._id.toString()
+            )
+          )
+        )
+      }
       toast.success('Note deleted successfully.')
     } catch (error) {
       toast.error('Failed to delete note. Please try again later.')
@@ -114,6 +134,25 @@ function Note({ note, setNotes, loading = false, setLoading }) {
             : prevNote
         )
       )
+      if (
+        user.recentlyViewedNotes.some(
+          (n) => n._id.toString() === note._id.toString()
+        )
+      ) {
+        dispatch(
+          setRecentlyViewedNotes(
+            user.recentlyViewedNotes.map((recentNote) =>
+              recentNote._id.toString() === note._id.toString()
+                ? {
+                    ...recentNote,
+                    likes: response.data.likes,
+                    dislikes: response.data.dislikes,
+                  }
+                : recentNote
+            )
+          )
+        )
+      }
     } catch (error) {
       toast.error(
         isLiked
@@ -149,6 +188,25 @@ function Note({ note, setNotes, loading = false, setLoading }) {
             : prevNote
         )
       )
+      if (
+        user.recentlyViewedNotes.some(
+          (n) => n._id.toString() === note._id.toString()
+        )
+      ) {
+        dispatch(
+          setRecentlyViewedNotes(
+            user.recentlyViewedNotes.map((recentNote) =>
+              recentNote._id.toString() === note._id.toString()
+                ? {
+                    ...recentNote,
+                    likes: response.data.likes,
+                    dislikes: response.data.dislikes,
+                  }
+                : recentNote
+            )
+          )
+        )
+      }
     } catch (error) {
       toast.error(
         isDisliked
@@ -162,9 +220,11 @@ function Note({ note, setNotes, loading = false, setLoading }) {
 
   return (
     <div
-      className="font-body rounded-xl border hover:shadow-md transition p-4 bg-white flex justify-between gap-4"
+      className={`font-body rounded-xl border hover:shadow-md transition p-4 bg-white flex justify-between gap-4 ${
+        !showDeleteConfirm ? 'cursor-pointer' : ''
+      }`}
       onClick={handleViewNote}
-      disabled={loading || isLoading}
+      disabled={loading || isLoading || showDeleteConfirm}
     >
       {/* Left Column */}
       <div className="flex flex-col gap-2 min-w-0 w-full">
@@ -202,7 +262,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
                 isLiked ? 'text-blue-600' : 'hover:text-blue-600'
               }`}
               onClick={handleLikeNote}
-              disabled={loading || isLoading}
+              disabled={loading || isLoading || showDeleteConfirm}
             >
               <ThumbsUp className="w-4 h-4" /> {note.likes || 0}
             </button>
@@ -211,7 +271,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
                 isDisliked ? 'text-red-600' : 'hover:text-red-600'
               }`}
               onClick={handleDislikeNote}
-              disabled={loading || isLoading}
+              disabled={loading || isLoading || showDeleteConfirm}
             >
               <ThumbsDown className="w-4 h-4" /> {note.dislikes || 0}
             </button>
@@ -226,18 +286,54 @@ function Note({ note, setNotes, loading = false, setLoading }) {
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Edit Note"
             onClick={handleEditNote}
-            disabled={loading || isLoading}
+            disabled={loading || isLoading || showDeleteConfirm}
           >
             <Pencil className="w-4 h-4 text-gray-600" />
           </button> */}
           <button
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Delete Note"
-            onClick={handleDeleteNote}
-            disabled={loading || isLoading}
+            onClick={handleDeleteClick}
+            disabled={loading || isLoading || showDeleteConfirm}
           >
             <Trash className="w-4 h-4 text-red-600" />
           </button>
+        </div>
+      )}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+          onClick={(e) => {
+            e.stopPropagation()
+            return
+          }}
+        >
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm shadow-lg">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">
+              Delete this note?
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this note?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (loading || isLoading) return
+                  setShowDeleteConfirm(false)
+                }}
+                className="px-4 py-2 text-sm rounded-md bg-gray-100 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteNote}
+                className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
