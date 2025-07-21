@@ -6,7 +6,6 @@ import {
   setLikedAndDislikedNotes,
 } from '../features/user/userSlice.js'
 import axiosPrivate from '../api/axiosPrivate.js'
-import { MAX_RECENT_NOTES } from '../config/constants.js'
 
 import {
   BookOpenText,

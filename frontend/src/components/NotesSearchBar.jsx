@@ -1,5 +1,5 @@
 import { Search, BookOpenText, GraduationCap, Landmark } from 'lucide-react'
-import axiosPrivate from '../api/axiosPrivate'
+import axiosPrivate from '../api/axiosPrivate.js'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
 

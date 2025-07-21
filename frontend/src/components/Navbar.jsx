@@ -9,17 +9,13 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+
 import { logout } from '../features/user/userSlice.js'
-import { useState, useEffect } from 'react'
 
 function Navbar({ loading = false }) {
-  const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const { user, isError, isSuccess, isLoading, message } = useSelector(
-    (state) => state.user
-  )
+  const { user, isLoading } = useSelector((state) => state.user)
 
   const handleLogout = (e) => {
     dispatch(logout())
