@@ -33,10 +33,15 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
     }),
   }
 
+  const validSortFields = ['createdAt', 'likes']
+  const sortBy = validSortFields.includes(req.query?.sortBy?.trim())
+    ? req.query.sortBy.trim()
+    : 'createdAt'
+
   try {
     const notes = await Note.find(query)
       .populate('user', 'name _id')
-      .sort({ createdAt: -1 })
+      .sort({ [sortBy]: -1, _id: -1 })
     const processedNotes = notes.map((note) => {
       if (note.isAnonymous) {
         return {
@@ -264,10 +269,16 @@ const getMyNotes = asyncHandler(async (req, res) => {
       title: { $regex: req.query.title.trim(), $options: 'i' },
     }),
   }
+
+  const validSortFields = ['createdAt', 'likes']
+  const sortBy = validSortFields.includes(req.query?.sortBy?.trim())
+    ? req.query.sortBy.trim()
+    : 'createdAt'
+
   try {
     const notes = await Note.find(query)
       .populate('user', 'name _id')
-      .sort({ createdAt: -1 })
+      .sort({ [sortBy]: -1, _id: -1 })
     const processedNotes = notes.map((note) => {
       if (note.isAnonymous) {
         return {

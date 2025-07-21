@@ -7,18 +7,20 @@ import {
 } from '../features/user/userSlice.js'
 
 const axiosPrivate = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || '',
+  baseURL: import.meta.env.VITE_BACKEND_BASE_URL || '',
 })
 
 axiosPrivate.defaults.withCredentials = true
 
 axiosPrivate.interceptors.request.use(
   (config) => {
-    const accessToken =
-      store.getState().user.user && store.getState().user.user.accessToken
-    if (accessToken) {
-      config.headers = config.headers || {}
-      config.headers['Authorization'] = `Bearer ${accessToken}`
+    config.headers = config.headers || {}
+    if (!config.headers['Authorization']) {
+      const accessToken =
+        store.getState().user.user && store.getState().user.user.accessToken
+      if (accessToken) {
+        config.headers['Authorization'] = `Bearer ${accessToken}`
+      }
     }
     return config
   },
@@ -47,6 +49,9 @@ axiosPrivate.interceptors.response.use(
           { withCredentials: true }
         )
         store.dispatch(setAccessToken(refreshResponse.data.accessToken))
+        error.config.headers[
+          'Authorization'
+        ] = `Bearer ${refreshResponse.data.accessToken}`
         return axiosPrivate(error.config)
       } catch (refreshError) {
         try {

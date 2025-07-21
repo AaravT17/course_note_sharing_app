@@ -192,7 +192,7 @@ const loginUser = asyncHandler(async (req, res) => {
   res.cookie('refreshToken', generateRefreshToken(user._id.toString()), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     path: '/',
     maxAge: REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
   })
@@ -216,7 +216,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     path: '/',
   })
 

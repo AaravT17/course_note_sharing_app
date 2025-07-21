@@ -1,6 +1,6 @@
 import { Search, BookOpenText, GraduationCap, Landmark } from 'lucide-react'
 import axiosPrivate from '../api/axiosPrivate.js'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 
 function NotesSearchBar({
@@ -17,18 +17,20 @@ function NotesSearchBar({
     university: '',
   })
 
+  const [sortBy, setSortBy] = useState('createdAt')
+
   const { title, courseCode, university } = searchQuery
   const { isLoading } = useSelector((state) => state.user)
 
-  const handleChange = (e) => {
+  const handleChangeSearchQuery = (e) => {
     setSearchQuery((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
     }))
   }
 
-  const handleSearch = async (e) => {
-    e.preventDefault()
+  const handleSearch = async (e = null) => {
+    if (e) e.preventDefault()
     if (loading || isLoading) return
     setLoading(true)
     try {
@@ -37,6 +39,7 @@ function NotesSearchBar({
           ...(title.trim() !== '' && { title: title.trim() }),
           ...(courseCode.trim() !== '' && { courseCode: courseCode.trim() }),
           ...(university.trim() !== '' && { university: university.trim() }),
+          sortBy,
         },
       })
       setNotes(response.data)
@@ -52,23 +55,46 @@ function NotesSearchBar({
   const handleClearFilters = async (e) => {
     e.preventDefault()
     if (loading || isLoading) return
+    if (
+      !title.trim() &&
+      !courseCode.trim() &&
+      !university.trim() &&
+      sortBy.trim() === 'createdAt'
+    )
+      return
     setSearchQuery({
       title: '',
       courseCode: '',
       university: '',
     })
-    setLoading(true)
-    try {
-      const response = await axiosPrivate.get(apiRoute)
-      setNotes(response.data)
-      setError(false)
-    } catch (error) {
-      setNotes([])
-      setError(true)
-    } finally {
-      setLoading(false)
+    if (sortBy !== 'createdAt') {
+      // Changing sortBy by triggers a re-fetch through the useEffect
+      setSortBy('createdAt')
+    } else {
+      // If sortBy isn't changed, we need to manually trigger a re-fetch
+      setLoading(true)
+      try {
+        const response = await axiosPrivate.get(apiRoute)
+        setNotes(response.data)
+        setError(false)
+      } catch (error) {
+        setNotes([])
+        setError(true)
+      } finally {
+        setLoading(false)
+      }
     }
   }
+
+  const didMountRef = useRef(false)
+
+  useEffect(() => {
+    if (didMountRef.current) {
+      handleSearch()
+    } else {
+      didMountRef.current = true
+    }
+  }, [sortBy])
 
   return (
     <div className="bg-blue-800 mb-6 rounded-lg px-4 py-10 sm:py-12">
@@ -80,7 +106,7 @@ function NotesSearchBar({
           {searchBarTitle}
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 font-body">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto_auto] gap-4 font-body">
           {/* Title */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
             <BookOpenText className="w-5 h-5 text-gray-400 mr-2" />
@@ -89,13 +115,12 @@ function NotesSearchBar({
               id="title"
               name="title"
               value={title}
-              onChange={handleChange}
+              onChange={handleChangeSearchQuery}
               disabled={loading || isLoading}
               placeholder="Search by title"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
           </div>
-
           {/* Course Code */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
             <GraduationCap className="w-5 h-5 text-gray-400 mr-2" />
@@ -104,13 +129,12 @@ function NotesSearchBar({
               id="courseCode"
               name="courseCode"
               value={courseCode}
-              onChange={handleChange}
+              onChange={handleChangeSearchQuery}
               disabled={loading || isLoading}
               placeholder="Search by course code"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
           </div>
-
           {/* University */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
             <Landmark className="w-5 h-5 text-gray-400 mr-2" />
@@ -119,13 +143,12 @@ function NotesSearchBar({
               id="university"
               name="university"
               value={university}
-              onChange={handleChange}
+              onChange={handleChangeSearchQuery}
               disabled={loading || isLoading}
               placeholder="Search by university"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
           </div>
-
           {/* Search Button */}
           <button
             type="submit"
@@ -139,12 +162,33 @@ function NotesSearchBar({
             <Search className="w-5 h-5 mr-2" />
             Search
           </button>
-
+          {/* Sort By Dropdown */}
+          <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm">
+            <label
+              htmlFor="sort"
+              className="text-sm text-gray-600 mr-2 whitespace-nowrap"
+            >
+              Sort by:
+            </label>
+            <select
+              id="sortBy"
+              name="sortBy"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value)
+              }}
+              disabled={loading || isLoading}
+              className="text-sm bg-transparent outline-none text-gray-800"
+            >
+              <option value="createdAt">Most Recent</option>
+              <option value="likes">Most Liked</option>
+            </select>
+          </div>
           {/* Clear Filters Button */}
           <button
             type="button"
             onClick={handleClearFilters}
-            className="text-sm text-white/80 hover:text-white underline font-medium transition"
+            className="flex items-center text-sm text-white/80 hover:text-white underline font-medium transition whitespace-nowrap"
             disabled={loading || isLoading}
           >
             Clear filters
