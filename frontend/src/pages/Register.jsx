@@ -16,8 +16,8 @@ function Register() {
 
   useEffect(() => {
     if (user) {
-      navigate('/')
       dispatch(reset())
+      navigate('/')
       return
     }
 

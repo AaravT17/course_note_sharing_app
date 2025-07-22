@@ -1,10 +1,11 @@
 import axios from 'axios'
 import store from '../app/store.js'
+import { resetUser, setError } from '../features/user/userSlice.js'
 import {
-  resetUser,
-  setError,
+  getAccessToken,
   setAccessToken,
-} from '../features/user/userSlice.js'
+  clearAccessToken,
+} from './tokenManager.js'
 
 const axiosPrivate = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_BASE_URL || '',
@@ -16,8 +17,7 @@ axiosPrivate.interceptors.request.use(
   (config) => {
     config.headers = config.headers || {}
     if (!config.headers['Authorization']) {
-      const accessToken =
-        store.getState().user.user && store.getState().user.user.accessToken
+      const accessToken = getAccessToken()
       if (accessToken) {
         config.headers['Authorization'] = `Bearer ${accessToken}`
       }
@@ -35,35 +35,50 @@ axiosPrivate.interceptors.response.use(
     if (
       error.response &&
       error.response.status === 401 &&
-      error.response.data &&
-      error.response.data.message &&
-      error.response.data.message.trim().startsWith('Unauthorized') &&
       !error.config._isRetry
     ) {
-      error.config._isRetry = true
-
-      try {
-        const refreshResponse = await axios.post(
-          '/api/users/auth/refresh',
-          {},
-          { withCredentials: true }
-        )
-        store.dispatch(setAccessToken(refreshResponse.data.accessToken))
-        error.config.headers[
-          'Authorization'
-        ] = `Bearer ${refreshResponse.data.accessToken}`
-        return axiosPrivate(error.config)
-      } catch (refreshError) {
+      let message = ''
+      if (
+        error.response.data &&
+        typeof error.response.data.message === 'string'
+      ) {
+        message = error.response.data.message.trim()
+      } else if (
+        error.response.data instanceof Blob &&
+        error.response.data.type === 'application/json'
+      ) {
         try {
-          await axios.post(
-            '/api/users/auth/logout',
+          const text = await error.response.data.text()
+          const parsedData = JSON.parse(text)
+          message = parsedData.message?.trim() || ''
+        } catch (_) {}
+      }
+      if (message.startsWith('Unauthorized')) {
+        error.config._isRetry = true
+        try {
+          const refreshResponse = await axios.post(
+            '/api/users/auth/refresh',
             {},
             { withCredentials: true }
           )
-        } catch (logoutError) {}
-        store.dispatch(resetUser())
-        store.dispatch(setError(true))
-        return Promise.reject(refreshError)
+          setAccessToken(refreshResponse.data.accessToken)
+          error.config.headers['Authorization'] = `Bearer ${getAccessToken()}`
+          return axiosPrivate(error.config)
+        } catch (refreshError) {
+          try {
+            await axios.post(
+              '/api/users/auth/logout',
+              {},
+              { withCredentials: true }
+            )
+          } catch (logoutError) {}
+          store.dispatch(resetUser())
+          clearAccessToken()
+          store.dispatch(setError(true))
+          return Promise.reject(refreshError)
+        }
+      } else {
+        return Promise.reject(error)
       }
     }
     return Promise.reject(error)

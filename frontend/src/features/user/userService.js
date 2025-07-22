@@ -1,4 +1,5 @@
 import axiosPublic from '../../api/axiosPublic.js'
+import { setAccessToken, clearAccessToken } from '../../api/tokenManager.js'
 
 const register = async (userData) => {
   const response = await axiosPublic.post('/api/users/', userData)
@@ -9,18 +10,25 @@ const login = async (userData) => {
   const response = await axiosPublic.post('/api/users/login', userData, {
     withCredentials: true,
   })
-  return response.data
+  setAccessToken(response.data.accessToken)
+  return response.data.user
 }
 
 const logout = async () => {
-  const response = await axiosPublic.post(
-    '/api/users/logout',
-    {},
-    {
-      withCredentials: true,
-    }
-  )
-  return response.data
+  try {
+    const response = await axiosPublic.post(
+      '/api/users/logout',
+      {},
+      {
+        withCredentials: true,
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw error
+  } finally {
+    clearAccessToken()
+  }
 }
 
 const userService = {

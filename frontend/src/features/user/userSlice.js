@@ -65,6 +65,9 @@ export const userSlice = createSlice({
       state.isLoading = false
       state.message = ''
     },
+    setUser: (state, action) => {
+      state.user = action.payload
+    },
     resetUser: (state) => {
       state.user = null
     },
@@ -82,12 +85,6 @@ export const userSlice = createSlice({
         ...state.user,
         likedNotes: action.payload.likedNotes,
         dislikedNotes: action.payload.dislikedNotes,
-      }
-    },
-    setAccessToken: (state, action) => {
-      state.user = {
-        ...state.user,
-        accessToken: action.payload,
       }
     },
   },
@@ -135,10 +132,10 @@ export const userSlice = createSlice({
 
 export const {
   reset,
+  setUser,
   resetUser,
   setError,
   setRecentlyViewedNotes,
   setLikedAndDislikedNotes,
-  setAccessToken,
 } = userSlice.actions
 export default userSlice.reducer

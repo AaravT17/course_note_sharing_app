@@ -16,8 +16,8 @@ function Login() {
 
   useEffect(() => {
     if (user) {
-      navigate('/')
       dispatch(reset())
+      navigate('/')
       return
     }
 

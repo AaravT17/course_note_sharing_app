@@ -53,13 +53,17 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         ),
       ]
 
-      const responseRecentNotes = await axiosPrivate.put('/api/users/me', {
-        recentlyViewedNotes: updatedNotes.map((note) => note._id),
-      })
-      dispatch(
-        setRecentlyViewedNotes(responseRecentNotes.data.recentlyViewedNotes)
-      )
-    } catch (error) {
+      try {
+        const responseRecentNotes = await axiosPrivate.put('/api/users/me', {
+          recentlyViewedNotes: updatedNotes.map((note) => note._id),
+        })
+        dispatch(
+          setRecentlyViewedNotes(
+            responseRecentNotes.data.user.recentlyViewedNotes
+          )
+        )
+      } catch (updateRecentNotesError) {}
+    } catch (viewNoteError) {
       toast.error('Failed to view note. Please try again later.')
     } finally {
       setLoading(false)

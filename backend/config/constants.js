@@ -4,7 +4,7 @@ export const MAX_FILES = 5
 
 export const VERIFICATION_LINK_EXPIRY_HRS = 24
 
-export const ACCESS_TOKEN_EXPIRY_MINS = 15
+export const ACCESS_TOKEN_EXPIRY_MINS = 1
 
 export const REFRESH_TOKEN_EXPIRY_DAYS = 7
 

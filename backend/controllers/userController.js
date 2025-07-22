@@ -199,12 +199,14 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // All checks complete, input data is valid, we can login the user
   res.status(200).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    recentlyViewedNotes: processedNotes,
-    likedNotes: user.likedNotes,
-    dislikedNotes: user.dislikedNotes,
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      recentlyViewedNotes: processedNotes,
+      likedNotes: user.likedNotes,
+      dislikedNotes: user.dislikedNotes,
+    },
     accessToken: generateAccessToken(user._id.toString()),
   })
 })
@@ -382,12 +384,14 @@ const getMe = asyncHandler(async (req, res) => {
   await req.user.save()
 
   res.status(200).json({
-    _id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    recentlyViewedNotes: processedNotes,
-    likedNotes: req.user.likedNotes,
-    dislikedNotes: req.user.dislikedNotes,
+    user: {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      recentlyViewedNotes: processedNotes,
+      likedNotes: req.user.likedNotes,
+      dislikedNotes: req.user.dislikedNotes,
+    },
   })
 })
 
@@ -427,12 +431,14 @@ const updateMe = asyncHandler(async (req, res) => {
     req.user.recentlyViewedNotes = notes.map((note) => note._id)
     const updatedUser = await req.user.save()
     res.status(200).json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      recentlyViewedNotes: processedNotes,
-      likedNotes: updatedUser.likedNotes,
-      dislikedNotes: updatedUser.dislikedNotes,
+      user: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        recentlyViewedNotes: processedNotes,
+        likedNotes: updatedUser.likedNotes,
+        dislikedNotes: updatedUser.dislikedNotes,
+      },
     })
   } catch (error) {
     console.log(error)
@@ -457,7 +463,7 @@ const deleteMe = asyncHandler(async (req, res, next) => {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
       path: '/',
     })
     res.status(204).end()
