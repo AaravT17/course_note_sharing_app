@@ -389,6 +389,89 @@ const getMyNotes = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc Get notes liked by current user
+// @route GET /api/users/me/notes/liked
+// @access Private
+const getLikedNotes = asyncHandler(async (req, res) => {
+  if (
+    req.query.cursorId &&
+    !mongoose.Types.ObjectId.isValid(req.query.cursorId.trim())
+  ) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  if (
+    (req.query.cursorId && !req.query.cursorValue) ||
+    (!req.query.cursorId && req.query.cursorValue)
+  ) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  const validSortFields = ['createdAt', 'likes']
+  const sortBy = validSortFields.includes(req.query.sortBy?.trim())
+    ? req.query.sortBy.trim()
+    : 'createdAt'
+
+  let cursorClause = {}
+  let cursorValue = null
+
+  if (req.query.cursorId && req.query.cursorValue) {
+    if (sortBy === 'createdAt') {
+      if (isNaN(Date.parse(req.query.cursorValue.trim()))) {
+        res.status(400)
+        throw new Error('Bad request')
+      }
+      cursorValue = new Date(req.query.cursorValue.trim())
+    } else {
+      if (isNaN(parseInt(req.query.cursorValue.trim()))) {
+        res.status(400)
+        throw new Error('Bad request')
+      }
+      cursorValue = parseInt(req.query.cursorValue.trim())
+    }
+    cursorClause = {
+      $or: [
+        { [sortBy]: { $lt: cursorValue } },
+        { [sortBy]: cursorValue, _id: { $lt: req.query.cursorId.trim() } },
+      ],
+    }
+  }
+
+  const query = {
+    _id: { $in: req.user.likedNotes },
+    ...(req.query.university && {
+      university: { $regex: req.query.university.trim(), $options: 'i' },
+    }),
+    ...(req.query.courseCode && {
+      courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
+    }),
+    ...(req.query.title && {
+      title: { $regex: req.query.title.trim(), $options: 'i' },
+    }),
+    ...cursorClause,
+  }
+
+  const limit = MAX_NOTES_PER_SEARCH
+
+  try {
+    const notes = await Note.find(query)
+      .sort({ [sortBy]: -1, _id: -1 })
+      .limit(limit + 1)
+      .populate('user', 'name _id')
+    const hasMore = notes.length > limit
+    const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
+    res.status(200).json({
+      notes: processedNotes,
+      hasMore,
+    })
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+})
+
 // @desc Update current user's note
 // @route PUT /api/users/me/notes/:id
 // @access Private
@@ -463,6 +546,7 @@ export {
   uploadNotes,
   updateNoteRating,
   getMyNotes,
+  getLikedNotes,
   updateMyNote,
   deleteMyNote,
 }

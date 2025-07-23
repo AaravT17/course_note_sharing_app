@@ -63,9 +63,20 @@ function NotesSearchBar({
       // Changing sortBy by triggers a re-fetch through the useEffect
       setSortBy('createdAt')
     } else {
-      // If sortBy isn't changed, we need to manually trigger a re-fetch
+      // If sortBy isn't changed, we need to manually re-fetch
       setLoading(true)
-      await handleSearch()
+      try {
+        const response = await axiosPrivate.get(apiRoute)
+        setNotes(response.data.notes)
+        setHasMore(response.data.hasMore)
+        setError(false)
+      } catch (error) {
+        setNotes([])
+        setHasMore(false)
+        setError(true)
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -136,11 +147,7 @@ function NotesSearchBar({
           <button
             type="submit"
             className="flex items-center justify-center bg-white text-blue-800 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition shadow-sm"
-            disabled={
-              loading ||
-              isLoading ||
-              (!title.trim() && !courseCode.trim() && !university.trim())
-            }
+            disabled={loading || isLoading}
           >
             <Search className="w-5 h-5 mr-2" />
             Search

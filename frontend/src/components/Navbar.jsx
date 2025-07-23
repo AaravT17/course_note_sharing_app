@@ -3,6 +3,7 @@ import logo from '../assets/logo.png'
 import {
   NotebookText,
   Search,
+  Heart,
   Upload,
   LogOut,
   LogIn,
@@ -30,7 +31,7 @@ function Navbar({ loading = false }) {
   return (
     <nav className="flex font-heading justify-between items-center p-4 mb-2 shadow-md">
       {/* Logo */}
-      <div className="text-3xl font-bold mr-4">
+      <div className="text-3xl font-bold mr-1 sm:mr-4">
         <Link to="/">
           <img
             src={logo}
@@ -42,7 +43,7 @@ function Navbar({ loading = false }) {
       </div>
 
       {/* Navigation */}
-      <ul className="flex gap-4 text-base min-w-max">
+      <ul className="flex gap-1 text-sm sm:gap-4 sm:text-base min-w-max">
         {user ? (
           <>
             <li>
@@ -59,6 +60,22 @@ function Navbar({ loading = false }) {
               >
                 <Search className="w-5 h-5" />
                 Browse
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/liked-notes"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-3 rounded-md transition leading-none ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-black hover:bg-blue-700 hover:text-white'
+                  }`
+                }
+                onClick={blockNavOnLoading}
+              >
+                <Heart className="w-5 h-5" />
+                Liked
               </NavLink>
             </li>
             <li>

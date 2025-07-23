@@ -65,7 +65,7 @@ function Dashboard() {
             setHasMore={() => {}}
           />
           <NotesGrid
-            notesGridTitle="Liked by You"
+            notesGridTitle="Liked Notes"
             apiRoute=""
             notes={user.likedNotesDisplay}
             setNotes={() => {}}

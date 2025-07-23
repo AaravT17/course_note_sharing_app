@@ -6,12 +6,17 @@ import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import BrowseNotes from './pages/BrowseNotes.jsx'
 import MyNotes from './pages/MyNotes.jsx'
+import LikedNotes from './pages/LikedNotes.jsx'
 import UploadNotes from './pages/UploadNotes.jsx'
 import VerifySuccess from './pages/VerifySuccess.jsx'
 import VerifyExpired from './pages/VerifyExpired.jsx'
 import VerifyInvalid from './pages/VerifyInvalid.jsx'
 import VerifyInternalError from './pages/VerifyInternalError.jsx'
-import { getBrowseNotes, getMyNotes } from './loaders/notesLoaders.js'
+import {
+  getBrowseNotes,
+  getMyNotes,
+  getLikedNotes,
+} from './loaders/notesLoaders.js'
 
 const router = createBrowserRouter([
   { path: '/', element: <Dashboard /> },
@@ -21,6 +26,7 @@ const router = createBrowserRouter([
   { path: '/reset-password', element: <ResetPassword /> },
   { path: '/browse', element: <BrowseNotes />, loader: getBrowseNotes },
   { path: '/my-notes', element: <MyNotes />, loader: getMyNotes },
+  { path: '/liked-notes', element: <LikedNotes />, loader: getLikedNotes },
   { path: '/upload', element: <UploadNotes /> },
 
   // Email verification routes

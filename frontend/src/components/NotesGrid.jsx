@@ -28,7 +28,9 @@ function NotesGrid({
 
   let emptyMsg = 'No notes were found.'
   if (notesGridTitle === 'Recently Viewed') {
-    emptyMsg = 'You haven’t viewed any notes yet. Start browsing!'
+    emptyMsg = 'You haven’t viewed any notes yet.'
+  } else if (notesGridTitle === 'Liked Notes' && !allowLoadMore) {
+    emptyMsg = 'You haven’t liked any notes yet.'
   }
 
   let errorMsg = 'There was an error fetching your notes. Please try again.'

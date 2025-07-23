@@ -13,6 +13,7 @@ import {
 } from '../controllers/userController.js'
 import {
   getMyNotes,
+  getLikedNotes,
   updateMyNote,
   deleteMyNote,
 } from '../controllers/noteController.js'
@@ -41,6 +42,8 @@ router.put('/me', authenticateUser, updateMe)
 router.delete('/me', authenticateUser, deleteMe)
 
 router.get('/me/notes', authenticateUser, getMyNotes)
+
+router.get('/me/notes/liked', authenticateUser, getLikedNotes)
 
 router.put('/me/notes/:id', authenticateUser, updateMyNote)
 

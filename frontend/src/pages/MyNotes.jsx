@@ -55,7 +55,7 @@ function MyNotes() {
         <>
           <Navbar loading={loading} />
           <NotesSearchBar
-            searchBarTitle="Search Your Notes"
+            searchBarTitle="Search My Notes"
             apiRoute="/api/users/me/notes"
             setNotes={setNotes}
             searchQuery={searchQuery}

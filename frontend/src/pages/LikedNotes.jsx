@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import { reset } from '../features/user/userSlice.js'
 
-function BrowseNotes() {
+function LikedNotes() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const notesData = useLoaderData()
@@ -23,7 +23,7 @@ function BrowseNotes() {
   const [error, setError] = useState(notesData.error)
   const [loading, setLoading] = useState(false)
 
-  const { user, isSuccess, isError, message } = useSelector(
+  const { user, isError, isSuccess, message } = useSelector(
     (state) => state.user
   )
 
@@ -55,8 +55,8 @@ function BrowseNotes() {
         <>
           <Navbar loading={loading} />
           <NotesSearchBar
-            searchBarTitle="Search Notes"
-            apiRoute="/api/notes"
+            searchBarTitle="Search Liked Notes"
+            apiRoute="/api/users/me/notes/liked"
             setNotes={setNotes}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -68,8 +68,8 @@ function BrowseNotes() {
             setHasMore={setHasMore}
           />
           <NotesGrid
-            notesGridTitle="Browse Notes"
-            apiRoute="/api/notes"
+            notesGridTitle="Liked Notes"
+            apiRoute="/api/users/me/notes/liked"
             notes={notes}
             setNotes={setNotes}
             error={error}
@@ -90,4 +90,4 @@ function BrowseNotes() {
   )
 }
 
-export default BrowseNotes
+export default LikedNotes
