@@ -47,11 +47,22 @@ function Dashboard() {
           <Hero />
           <NotesGrid
             notesGridTitle="Recently Viewed"
+            apiRoute=""
             notes={user.recentlyViewedNotes}
-            error={false}
             setNotes={() => {}}
+            error={false}
+            setError={() => {}}
             loading={loading}
             setLoading={setLoading}
+            searchQuery={{
+              title: '',
+              courseCode: '',
+              university: '',
+            }}
+            sortBy="createdAt"
+            allowLoadMore={false}
+            hasMore={false}
+            setHasMore={() => {}}
           />
           {/* TODO: Add a 'You might be interested in' section, will also require an additional route in the backend */}
         </>

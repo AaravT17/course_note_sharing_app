@@ -1,7 +1,6 @@
 import Navbar from '../components/Navbar.jsx'
 import NotesSearchBar from '../components/NotesSearchBar.jsx'
 import NotesGrid from '../components/NotesGrid.jsx'
-import axiosPrivate from '../api/axiosPrivate.js'
 import { useLoaderData } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -14,8 +13,16 @@ function BrowseNotes() {
   const dispatch = useDispatch()
   const notesData = useLoaderData()
   const [notes, setNotes] = useState(notesData.notes)
+  const [searchQuery, setSearchQuery] = useState({
+    title: '',
+    courseCode: '',
+    university: '',
+  })
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [hasMore, setHasMore] = useState(notesData.hasMore)
   const [error, setError] = useState(notesData.error)
   const [loading, setLoading] = useState(false)
+
   const { user, isSuccess, isError, message } = useSelector(
     (state) => state.user
   )
@@ -51,17 +58,29 @@ function BrowseNotes() {
             searchBarTitle="Browse Notes"
             apiRoute="/api/notes"
             setNotes={setNotes}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
             setError={setError}
             loading={loading}
             setLoading={setLoading}
+            setHasMore={setHasMore}
           />
           <NotesGrid
             notesGridTitle="Results"
+            apiRoute="/api/notes"
             notes={notes}
-            error={error}
             setNotes={setNotes}
+            error={error}
+            setError={setError}
             loading={loading}
             setLoading={setLoading}
+            searchQuery={searchQuery}
+            sortBy={sortBy}
+            allowLoadMore={true}
+            hasMore={hasMore}
+            setHasMore={setHasMore}
           />
         </>
       ) : (
@@ -69,15 +88,6 @@ function BrowseNotes() {
       )}
     </>
   )
-}
-
-export const getBrowseNotes = async () => {
-  try {
-    const response = await axiosPrivate.get('/api/notes')
-    return { notes: response.data, error: false }
-  } catch (error) {
-    return { notes: [], error: true }
-  }
 }
 
 export default BrowseNotes

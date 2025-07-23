@@ -1,7 +1,6 @@
 import Navbar from '../components/Navbar.jsx'
 import NotesSearchBar from '../components/NotesSearchBar.jsx'
 import NotesGrid from '../components/NotesGrid.jsx'
-import axiosPrivate from '../api/axiosPrivate.js'
 import { useLoaderData } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -14,6 +13,13 @@ function MyNotes() {
   const dispatch = useDispatch()
   const notesData = useLoaderData()
   const [notes, setNotes] = useState(notesData.notes)
+  const [searchQuery, setSearchQuery] = useState({
+    title: '',
+    courseCode: '',
+    university: '',
+  })
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [hasMore, setHasMore] = useState(notesData.hasMore)
   const [error, setError] = useState(notesData.error)
   const [loading, setLoading] = useState(false)
 
@@ -52,17 +58,29 @@ function MyNotes() {
             searchBarTitle="Search Your Notes"
             apiRoute="/api/users/me/notes"
             setNotes={setNotes}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
             setError={setError}
             loading={loading}
             setLoading={setLoading}
+            setHasMore={setHasMore}
           />
           <NotesGrid
             notesGridTitle="My Notes"
+            apiRoute="/api/users/me/notes"
             notes={notes}
-            error={error}
             setNotes={setNotes}
+            error={error}
+            setError={setError}
             loading={loading}
             setLoading={setLoading}
+            searchQuery={searchQuery}
+            sortBy={sortBy}
+            allowLoadMore={true}
+            hasMore={hasMore}
+            setHasMore={setHasMore}
           />
         </>
       ) : (
@@ -70,15 +88,6 @@ function MyNotes() {
       )}
     </>
   )
-}
-
-export const getMyNotes = async () => {
-  try {
-    const response = await axiosPrivate.get('/api/users/me/notes')
-    return { notes: response.data, error: false }
-  } catch (error) {
-    return { notes: [], error: true }
-  }
 }
 
 export default MyNotes

@@ -5,6 +5,7 @@ import asyncHandler from 'express-async-handler'
  */
 import path from 'path'
 import fs from 'fs'
+import mongoose from 'mongoose'
 import Note from '../models/noteModel.js'
 import {
   getStorageFileName,
@@ -13,6 +14,7 @@ import {
   deleteFile,
   deleteFileAndNote,
 } from '../utils/noteUtils.js'
+import { MAX_NOTES_PER_SEARCH } from '../config/constants.js'
 
 // TODO: Modify uploadNotes and getNoteFile to store and retrieve files from AWS instance
 
@@ -20,6 +22,52 @@ import {
 // @route GET /api/notes
 // @access Private
 const getNotesMetadata = asyncHandler(async (req, res) => {
+  if (
+    req.query.cursorId &&
+    !mongoose.Types.ObjectId.isValid(req.query.cursorId.trim())
+  ) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  if (
+    (req.query.cursorId && !req.query.cursorValue) ||
+    (!req.query.cursorId && req.query.cursorValue)
+  ) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  const validSortFields = ['createdAt', 'likes']
+  const sortBy = validSortFields.includes(req.query.sortBy?.trim())
+    ? req.query.sortBy.trim()
+    : 'createdAt'
+
+  let cursorClause = {}
+  let cursorValue = null
+
+  if (req.query.cursorId && req.query.cursorValue) {
+    if (sortBy === 'createdAt') {
+      if (isNaN(Date.parse(req.query.cursorValue.trim()))) {
+        res.status(400)
+        throw new Error('Bad request')
+      }
+      cursorValue = new Date(req.query.cursorValue.trim())
+    } else {
+      if (isNaN(parseInt(req.query.cursorValue.trim()))) {
+        res.status(400)
+        throw new Error('Bad request')
+      }
+      cursorValue = parseInt(req.query.cursorValue.trim())
+    }
+    cursorClause = {
+      $or: [
+        { [sortBy]: { $lt: cursorValue } },
+        { [sortBy]: cursorValue, _id: { $lt: req.query.cursorId.trim() } },
+      ],
+    }
+  }
+
   const query = {
     user: { $ne: req.user._id }, // Exclude current user's notes
     ...(req.query.university && {
@@ -31,18 +79,18 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
     ...(req.query.title && {
       title: { $regex: req.query.title.trim(), $options: 'i' },
     }),
+    ...cursorClause,
   }
 
-  const validSortFields = ['createdAt', 'likes']
-  const sortBy = validSortFields.includes(req.query?.sortBy?.trim())
-    ? req.query.sortBy.trim()
-    : 'createdAt'
+  const limit = MAX_NOTES_PER_SEARCH
 
   try {
     const notes = await Note.find(query)
-      .populate('user', 'name _id')
       .sort({ [sortBy]: -1, _id: -1 })
-    const processedNotes = notes.map((note) => {
+      .limit(limit + 1)
+      .populate('user', 'name _id')
+    const hasMore = notes.length > limit
+    const processedNotes = notes.slice(0, limit).map((note) => {
       if (note.isAnonymous) {
         return {
           ...note.toObject(),
@@ -55,12 +103,14 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
       }
       return note.toObject()
     })
-    res.status(200).json(processedNotes)
+    res.status(200).json({
+      notes: processedNotes,
+      hasMore,
+    })
   } catch (error) {
     console.log(error)
     throw error
   }
-  // TODO: Add pagination, sorting options
 })
 
 // @desc Get note file (PDF)
@@ -257,6 +307,52 @@ const updateNoteRating = asyncHandler(async (req, res) => {
 // @route GET /api/users/me/notes
 // @access Private
 const getMyNotes = asyncHandler(async (req, res) => {
+  if (
+    req.query.cursorId &&
+    !mongoose.Types.ObjectId.isValid(req.query.cursorId.trim())
+  ) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  if (
+    (req.query.cursorId && !req.query.cursorValue) ||
+    (!req.query.cursorId && req.query.cursorValue)
+  ) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
+  const validSortFields = ['createdAt', 'likes']
+  const sortBy = validSortFields.includes(req.query.sortBy?.trim())
+    ? req.query.sortBy.trim()
+    : 'createdAt'
+
+  let cursorClause = {}
+  let cursorValue = null
+
+  if (req.query.cursorId && req.query.cursorValue) {
+    if (sortBy === 'createdAt') {
+      if (isNaN(Date.parse(req.query.cursorValue.trim()))) {
+        res.status(400)
+        throw new Error('Bad request')
+      }
+      cursorValue = new Date(req.query.cursorValue.trim())
+    } else {
+      if (isNaN(parseInt(req.query.cursorValue.trim()))) {
+        res.status(400)
+        throw new Error('Bad request')
+      }
+      cursorValue = parseInt(req.query.cursorValue.trim())
+    }
+    cursorClause = {
+      $or: [
+        { [sortBy]: { $lt: cursorValue } },
+        { [sortBy]: cursorValue, _id: { $lt: req.query.cursorId.trim() } },
+      ],
+    }
+  }
+
   const query = {
     user: req.user._id,
     ...(req.query.university && {
@@ -268,18 +364,18 @@ const getMyNotes = asyncHandler(async (req, res) => {
     ...(req.query.title && {
       title: { $regex: req.query.title.trim(), $options: 'i' },
     }),
+    ...cursorClause,
   }
 
-  const validSortFields = ['createdAt', 'likes']
-  const sortBy = validSortFields.includes(req.query?.sortBy?.trim())
-    ? req.query.sortBy.trim()
-    : 'createdAt'
+  const limit = MAX_NOTES_PER_SEARCH
 
   try {
     const notes = await Note.find(query)
-      .populate('user', 'name _id')
       .sort({ [sortBy]: -1, _id: -1 })
-    const processedNotes = notes.map((note) => {
+      .limit(limit + 1)
+      .populate('user', 'name _id')
+    const hasMore = notes.length > limit
+    const processedNotes = notes.slice(0, limit).map((note) => {
       if (note.isAnonymous) {
         return {
           ...note.toObject(),
@@ -292,7 +388,10 @@ const getMyNotes = asyncHandler(async (req, res) => {
       }
       return note.toObject()
     })
-    res.status(200).json(processedNotes)
+    res.status(200).json({
+      notes: processedNotes,
+      hasMore,
+    })
   } catch (error) {
     console.log(error)
     throw error

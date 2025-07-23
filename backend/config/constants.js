@@ -13,3 +13,5 @@ export const PASSWORD_RESET_EXPIRY_MINS = 15
 export const MIN_PASSWORD_LENGTH = 10
 
 export const MAX_RECENT_NOTES = 20
+
+export const MAX_NOTES_PER_SEARCH = 50

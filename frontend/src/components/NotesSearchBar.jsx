@@ -7,18 +7,15 @@ function NotesSearchBar({
   searchBarTitle,
   apiRoute,
   setNotes,
+  searchQuery,
+  setSearchQuery,
+  sortBy,
+  setSortBy,
   setError,
   loading = false,
   setLoading,
+  setHasMore = () => {},
 }) {
-  const [searchQuery, setSearchQuery] = useState({
-    title: '',
-    courseCode: '',
-    university: '',
-  })
-
-  const [sortBy, setSortBy] = useState('createdAt')
-
   const { title, courseCode, university } = searchQuery
   const { isLoading } = useSelector((state) => state.user)
 
@@ -42,10 +39,12 @@ function NotesSearchBar({
           sortBy,
         },
       })
-      setNotes(response.data)
+      setNotes(response.data.notes)
+      setHasMore(response.data.hasMore)
       setError(false)
     } catch (error) {
       setNotes([])
+      setHasMore(false)
       setError(true)
     } finally {
       setLoading(false)
@@ -55,13 +54,6 @@ function NotesSearchBar({
   const handleClearFilters = async (e) => {
     e.preventDefault()
     if (loading || isLoading) return
-    if (
-      !title.trim() &&
-      !courseCode.trim() &&
-      !university.trim() &&
-      sortBy.trim() === 'createdAt'
-    )
-      return
     setSearchQuery({
       title: '',
       courseCode: '',
@@ -73,16 +65,7 @@ function NotesSearchBar({
     } else {
       // If sortBy isn't changed, we need to manually trigger a re-fetch
       setLoading(true)
-      try {
-        const response = await axiosPrivate.get(apiRoute)
-        setNotes(response.data)
-        setError(false)
-      } catch (error) {
-        setNotes([])
-        setError(true)
-      } finally {
-        setLoading(false)
-      }
+      await handleSearch()
     }
   }
 
@@ -106,7 +89,7 @@ function NotesSearchBar({
           {searchBarTitle}
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto_auto] gap-4 font-body">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto_auto] gap-4 font-body">
           {/* Title */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
             <BookOpenText className="w-5 h-5 text-gray-400 mr-2" />

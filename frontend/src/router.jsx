@@ -4,13 +4,14 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
-import BrowseNotes, { getBrowseNotes } from './pages/BrowseNotes.jsx'
-import MyNotes, { getMyNotes } from './pages/MyNotes.jsx'
+import BrowseNotes from './pages/BrowseNotes.jsx'
+import MyNotes from './pages/MyNotes.jsx'
 import UploadNotes from './pages/UploadNotes.jsx'
 import VerifySuccess from './pages/VerifySuccess.jsx'
 import VerifyExpired from './pages/VerifyExpired.jsx'
 import VerifyInvalid from './pages/VerifyInvalid.jsx'
 import VerifyInternalError from './pages/VerifyInternalError.jsx'
+import { getBrowseNotes, getMyNotes } from './loaders/notesLoaders.js'
 
 const router = createBrowserRouter([
   { path: '/', element: <Dashboard /> },
