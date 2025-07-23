@@ -1,7 +1,8 @@
 import { MAX_FILE_SIZE_MB, MAX_FILES } from '../config/constants.js'
 
 export const errorHandler = (err, req, res, next) => {
-  let statusCode = res.statusCode || err.statusCode || 500
+  let statusCode =
+    res.statusCode && res.statusCode !== 200 ? res.statusCode : 500
   let message = err.message || 'An error occurred'
   // err.message should always be defined if control is passed to errorHandler,
   // but for robustness, this condition was added
@@ -17,6 +18,5 @@ export const errorHandler = (err, req, res, next) => {
   }
   res.status(statusCode).json({
     message,
-    // stack: process.env.NODE_ENV === 'development' ? err.stack : null
   })
 }

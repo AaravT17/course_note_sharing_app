@@ -15,11 +15,13 @@ import {
   sendVerificationEmail,
   sendPasswordResetEmail,
 } from '../utils/userUtils.js'
+import { processNoteForDisplay } from '../utils/noteUtils.js'
 import {
   VERIFICATION_LINK_EXPIRY_HRS,
   REFRESH_TOKEN_EXPIRY_DAYS,
   PASSWORD_RESET_EXPIRY_MINS,
   MAX_RECENT_NOTES,
+  MAX_LIKED_NOTES_DASHBOARD,
   MIN_PASSWORD_LENGTH,
 } from '../config/constants.js'
 
@@ -164,28 +166,40 @@ const loginUser = asyncHandler(async (req, res) => {
    * populated list have likely been deleted)
    */
 
-  await user.populate({
-    path: 'recentlyViewedNotes',
-    populate: { path: 'user', select: 'name _id' },
-  })
+  await user.populate([
+    {
+      path: 'recentlyViewedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+    {
+      path: 'likedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+    {
+      path: 'dislikedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+  ])
 
-  const notes = user.recentlyViewedNotes.slice(0, MAX_RECENT_NOTES)
+  const recentNotes = user.recentlyViewedNotes
+    .filter(Boolean)
+    .slice(0, MAX_RECENT_NOTES)
 
-  const processedNotes = notes.map((note) => {
-    if (note.isAnonymous) {
-      return {
-        ...note.toObject(),
-        user: {
-          _id: note.user?._id,
-          id: note.user?._id?.toString(),
-          name: '-',
-        },
-      }
-    }
-    return note.toObject()
-  })
+  const processedRecentNotes = recentNotes.map(processNoteForDisplay)
 
-  user.recentlyViewedNotes = notes.map((note) => note._id)
+  user.recentlyViewedNotes = recentNotes.map((note) => note._id)
+
+  const likedNotes = user.likedNotes.filter(Boolean)
+
+  const processedLikedNotesDisplay = likedNotes
+    .slice(0, MAX_LIKED_NOTES_DASHBOARD)
+    .map(processNoteForDisplay)
+
+  user.likedNotes = likedNotes.map((note) => note._id)
+
+  user.dislikedNotes = user.dislikedNotes
+    .filter(Boolean)
+    .map((note) => note._id)
 
   await user.save()
 
@@ -203,7 +217,8 @@ const loginUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      recentlyViewedNotes: processedNotes,
+      recentlyViewedNotes: processedRecentNotes,
+      likedNotesDisplay: processedLikedNotesDisplay,
       likedNotes: user.likedNotes,
       dislikedNotes: user.dislikedNotes,
     },
@@ -358,28 +373,40 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 // @route GET /api/users/me
 // @access Private
 const getMe = asyncHandler(async (req, res) => {
-  await req.user.populate({
-    path: 'recentlyViewedNotes',
-    populate: { path: 'user', select: 'name _id' },
-  })
+  await req.user.populate([
+    {
+      path: 'recentlyViewedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+    {
+      path: 'likedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+    {
+      path: 'dislikedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+  ])
 
-  const notes = req.user.recentlyViewedNotes.slice(0, MAX_RECENT_NOTES)
+  const recentNotes = req.user.recentlyViewedNotes
+    .filter(Boolean)
+    .slice(0, MAX_RECENT_NOTES)
 
-  const processedNotes = notes.map((note) => {
-    if (note.isAnonymous) {
-      return {
-        ...note.toObject(),
-        user: {
-          _id: note.user?._id,
-          id: note.user?._id?.toString(),
-          name: '-',
-        },
-      }
-    }
-    return note.toObject()
-  })
+  const processedRecentNotes = recentNotes.map(processNoteForDisplay)
 
-  req.user.recentlyViewedNotes = notes.map((note) => note._id)
+  req.user.recentlyViewedNotes = recentNotes.map((note) => note._id)
+
+  const likedNotes = req.user.likedNotes.filter(Boolean)
+
+  const processedLikedNotesDisplay = likedNotes
+    .slice(0, MAX_LIKED_NOTES_DASHBOARD)
+    .map(processNoteForDisplay)
+
+  req.user.likedNotes = likedNotes.map((note) => note._id)
+
+  req.user.dislikedNotes = req.user.dislikedNotes
+    .filter(Boolean)
+    .map((note) => note._id)
 
   await req.user.save()
 
@@ -388,7 +415,8 @@ const getMe = asyncHandler(async (req, res) => {
       _id: req.user._id,
       name: req.user.name,
       email: req.user.email,
-      recentlyViewedNotes: processedNotes,
+      recentlyViewedNotes: processedRecentNotes,
+      likedNotesDisplay: processedLikedNotesDisplay,
       likedNotes: req.user.likedNotes,
       dislikedNotes: req.user.dislikedNotes,
     },
@@ -413,21 +441,11 @@ const updateMe = asyncHandler(async (req, res) => {
       populate: { path: 'user', select: 'name _id' },
     })
 
-    const notes = req.user.recentlyViewedNotes.slice(0, MAX_RECENT_NOTES)
+    const notes = req.user.recentlyViewedNotes
+      .filter(Boolean)
+      .slice(0, MAX_RECENT_NOTES)
 
-    const processedNotes = notes.map((note) => {
-      if (note.isAnonymous) {
-        return {
-          ...note.toObject(),
-          user: {
-            _id: note.user?._id,
-            id: note.user?._id?.toString(),
-            name: '-',
-          },
-        }
-      }
-      return note.toObject()
-    })
+    const processedNotes = notes.map(processNoteForDisplay)
     req.user.recentlyViewedNotes = notes.map((note) => note._id)
     const updatedUser = await req.user.save()
     res.status(200).json({

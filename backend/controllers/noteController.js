@@ -13,8 +13,12 @@ import {
   getTitle,
   deleteFile,
   deleteFileAndNote,
+  processNoteForDisplay,
 } from '../utils/noteUtils.js'
-import { MAX_NOTES_PER_SEARCH } from '../config/constants.js'
+import {
+  MAX_NOTES_PER_SEARCH,
+  MAX_LIKED_NOTES_DASHBOARD,
+} from '../config/constants.js'
 
 // TODO: Modify uploadNotes and getNoteFile to store and retrieve files from AWS instance
 
@@ -90,19 +94,7 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
       .limit(limit + 1)
       .populate('user', 'name _id')
     const hasMore = notes.length > limit
-    const processedNotes = notes.slice(0, limit).map((note) => {
-      if (note.isAnonymous) {
-        return {
-          ...note.toObject(),
-          user: {
-            _id: note.user?._id,
-            id: note.user?._id?.toString(),
-            name: '-',
-          },
-        }
-      }
-      return note.toObject()
-    })
+    const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
     res.status(200).json({
       notes: processedNotes,
       hasMore,
@@ -216,57 +208,67 @@ const updateNoteRating = asyncHandler(async (req, res) => {
     res.status(400)
     throw new Error('Bad request')
   }
+
   const note = await Note.findById(req.params.id)
+
   if (!note) {
     res.status(404)
     throw new Error('Note not found')
   }
+
   const prevLikes = note.likes
   const prevDislikes = note.dislikes
-  if (req.body.likes) {
-    if (req.body.likes === '+') {
-      note.likes += 1
-    } else if (req.body.likes === '-' && note.likes > 0) {
-      note.likes -= 1
-    }
-  }
-  if (req.body.dislikes) {
-    if (req.body.dislikes === '+') {
-      note.dislikes += 1
-    } else if (req.body.dislikes === '-' && note.dislikes > 0) {
-      note.dislikes -= 1
-    }
-  }
   const userPrevLikedNotes = req.user.likedNotes || []
   const userPrevDislikedNotes = req.user.dislikedNotes || []
-  // Update user's like and dislike history
+
   if (req.body.likes === '+') {
+    note.likes += 1
     req.user.likedNotes = [
       note._id,
       ...req.user.likedNotes.filter(
         (id) => id.toString() !== note._id.toString()
       ),
     ]
-  } else if (req.body.likes === '-') {
+  } else if (req.body.likes === '-' && note.likes > 0) {
+    note.likes -= 1
     req.user.likedNotes = req.user.likedNotes.filter(
       (id) => id.toString() !== note._id.toString()
     )
   }
   if (req.body.dislikes === '+') {
+    note.dislikes += 1
     req.user.dislikedNotes = [
       note._id,
       ...req.user.dislikedNotes.filter(
         (id) => id.toString() !== note._id.toString()
       ),
     ]
-  } else if (req.body.dislikes === '-') {
+  } else if (req.body.dislikes === '-' && note.dislikes > 0) {
+    note.dislikes -= 1
     req.user.dislikedNotes = req.user.dislikedNotes.filter(
       (id) => id.toString() !== note._id.toString()
     )
   }
+
   try {
     let updatedUser
     let updatedNote
+    await req.user.populate({
+      path: 'likedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    })
+    const likedNotes = req.user.likedNotes.filter(Boolean)
+    const likedNotesDisplay = likedNotes
+      .slice(0, MAX_LIKED_NOTES_DASHBOARD)
+      .map(processNoteForDisplay)
+      .map((likedNote) =>
+        likedNote._id.toString() === note._id.toString()
+          ? { ...likedNote, likes: note.likes, dislikes: note.dislikes }
+          : likedNote
+      )
+    // Here, it is important that processNoteForDisplay is called first,
+    // processNoteForDisplay only works reliably on Mongoose documents
+    req.user.likedNotes = likedNotes.map((note) => note._id)
     try {
       updatedUser = await req.user.save()
     } catch (userSaveError) {
@@ -280,6 +282,7 @@ const updateNoteRating = asyncHandler(async (req, res) => {
     res.status(200).json({
       likes: updatedNote.likes,
       dislikes: updatedNote.dislikes,
+      likedNotesDisplay,
       likedNotes: updatedUser.likedNotes,
       dislikedNotes: updatedUser.dislikedNotes,
     })
@@ -375,19 +378,7 @@ const getMyNotes = asyncHandler(async (req, res) => {
       .limit(limit + 1)
       .populate('user', 'name _id')
     const hasMore = notes.length > limit
-    const processedNotes = notes.slice(0, limit).map((note) => {
-      if (note.isAnonymous) {
-        return {
-          ...note.toObject(),
-          user: {
-            _id: note.user?._id,
-            id: note.user?._id?.toString(),
-            name: '-',
-          },
-        }
-      }
-      return note.toObject()
-    })
+    const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
     res.status(200).json({
       notes: processedNotes,
       hasMore,

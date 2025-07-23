@@ -57,4 +57,25 @@ const deleteFileAndNote = async (note) => {
   }
 }
 
-export { getStorageFileName, getUuid, getTitle, deleteFile, deleteFileAndNote }
+const processNoteForDisplay = (note) => {
+  if (note.isAnonymous) {
+    return {
+      ...note.toObject(),
+      user: {
+        _id: note.user?._id,
+        id: note.user?._id?.toString(),
+        name: '-',
+      },
+    }
+  }
+  return note.toObject()
+}
+
+export {
+  getStorageFileName,
+  getUuid,
+  getTitle,
+  deleteFile,
+  deleteFileAndNote,
+  processNoteForDisplay,
+}

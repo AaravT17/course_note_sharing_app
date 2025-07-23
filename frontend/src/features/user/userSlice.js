@@ -83,6 +83,7 @@ export const userSlice = createSlice({
     setLikedAndDislikedNotes: (state, action) => {
       state.user = {
         ...state.user,
+        likedNotesDisplay: action.payload.likedNotesDisplay,
         likedNotes: action.payload.likedNotes,
         dislikedNotes: action.payload.dislikedNotes,
       }

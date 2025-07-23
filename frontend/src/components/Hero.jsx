@@ -62,8 +62,6 @@ function Hero() {
     return () => clearInterval(intervalId)
   }, [])
 
-  // TODO: Add a fade out effect for the subtitle change
-
   return (
     <>
       <section className="bg-blue-800 font-heading px-4 py-8 sm:px-8 sm:py-12 rounded-lg shadow mb-6">

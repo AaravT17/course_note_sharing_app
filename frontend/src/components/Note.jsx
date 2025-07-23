@@ -14,7 +14,6 @@ import {
   User,
   ThumbsUp,
   ThumbsDown,
-  Pencil,
   Trash,
 } from 'lucide-react'
 
@@ -107,11 +106,6 @@ function Note({ note, setNotes, loading = false, setLoading }) {
       setLoading(false)
     }
   }
-
-  // const handleEditNote = (e) => {
-  //   e.stopPropagation()
-  //   console.log('Edit')
-  // }
 
   const handleLikeNote = async (e) => {
     e.stopPropagation()
@@ -281,17 +275,9 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         </div>
       </div>
 
-      {/* Right Column: Edit/Delete */}
+      {/* Right Column: Edit/Delete/Report */}
       {isMyNote && (
         <div className="flex flex-row gap-2 items-start self-start shrink-0">
-          {/* <button
-            className="p-1 rounded hover:bg-gray-100 transition"
-            title="Edit Note"
-            onClick={handleEditNote}
-            disabled={loading || isLoading || showDeleteConfirm}
-          >
-            <Pencil className="w-4 h-4 text-gray-600" />
-          </button> */}
           <button
             className="p-1 rounded hover:bg-gray-100 transition"
             title="Delete Note"

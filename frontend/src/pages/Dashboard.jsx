@@ -64,7 +64,25 @@ function Dashboard() {
             hasMore={false}
             setHasMore={() => {}}
           />
-          {/* TODO: Add a 'You might be interested in' section, will also require an additional route in the backend */}
+          <NotesGrid
+            notesGridTitle="Liked by You"
+            apiRoute=""
+            notes={user.likedNotesDisplay}
+            setNotes={() => {}}
+            error={false}
+            setError={() => {}}
+            loading={loading}
+            setLoading={setLoading}
+            searchQuery={{
+              title: '',
+              courseCode: '',
+              university: '',
+            }}
+            sortBy="createdAt"
+            allowLoadMore={false}
+            hasMore={false}
+            setHasMore={() => {}}
+          />
         </>
       ) : (
         <></>
