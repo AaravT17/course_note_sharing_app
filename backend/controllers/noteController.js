@@ -3,13 +3,13 @@ import asyncHandler from 'express-async-handler'
  * become async, and wrapping them in the asyncHandler allows us to avoid
  * having to write try/catch blocks for error handling in each function
  */
-import path from 'path'
-import fs from 'fs'
 import mongoose from 'mongoose'
+import { v4 as uuidv4 } from 'uuid'
 import Note from '../models/noteModel.js'
+import { getS3Client } from '../config/s3.js'
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import {
-  getStorageFileName,
-  getUuid,
+  getS3Key,
   getTitle,
   deleteFile,
   deleteFileAndNote,
@@ -19,8 +19,6 @@ import {
   MAX_NOTES_PER_SEARCH,
   MAX_LIKED_NOTES_DASHBOARD,
 } from '../config/constants.js'
-
-// TODO: Modify uploadNotes and getNoteFile to store and retrieve files from AWS instance
 
 // @desc Get notes metadata, optionally filter/search by university and/or course code
 // @route GET /api/notes
@@ -109,6 +107,7 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
 // @route GET /api/notes/:id/view
 // @access Private
 const getNoteFile = asyncHandler(async (req, res) => {
+  const s3Client = getS3Client()
   try {
     const note = await Note.findById(req.params.id)
     if (!note) {
@@ -116,21 +115,37 @@ const getNoteFile = asyncHandler(async (req, res) => {
       res.status(404)
       throw new Error('File not found')
     }
-    const filePath = path.resolve(
-      'backend',
-      'uploads',
-      getStorageFileName(note)
-    )
-    if (!fs.existsSync(filePath)) {
-      console.log(`File ${getStorageFileName(note)} not found in storage`)
-      res.status(404)
-      throw new Error('File not found')
+    try {
+      const fileResponse = await s3Client.send(
+        new GetObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET,
+          Key: getS3Key(note),
+        })
+      )
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${note.title}.pdf"`
+      )
+      res.status(200)
+      fileResponse.Body.pipe(res)
+    } catch (readFileError) {
+      if (readFileError.name === 'NoSuchKey') {
+        res.status(404)
+        throw new Error('File not found')
+      }
+      if (readFileError.name === 'AccessDenied') {
+        throw new Error('Access denied')
+      }
+      throw readFileError
     }
-    res.set('Content-Type', 'application/pdf')
-    res.status(200).sendFile(filePath)
   } catch (error) {
     console.log(error)
-    throw error
+    let message
+    if (error.message === 'File not found') {
+      message = 'File not found'
+    }
+    throw new Error(message || 'Failed to retrieve file from storage')
   }
 })
 
@@ -139,57 +154,86 @@ const getNoteFile = asyncHandler(async (req, res) => {
 // @access Private
 const uploadNotes = asyncHandler(async (req, res) => {
   /* This will run after multer middleware (if no error occurs), which will
-   * parse form data, save notes to storage, and set req.body and req.files
+   * parse form data and set req.body and req.files, req.files will be an array of files, and the files' content will be in a buffer in memory
    */
   if (!req.files || req.files.length === 0) {
     res.status(400)
     throw new Error('No files submitted')
   }
 
+  const university = req.body.university.trim()
+  const courseCode = req.body.courseCode.trim().toUpperCase()
+
+  const existingNote = await Note.findOne({
+    user: req.user._id,
+    university,
+    courseCode,
+    title: { $in: req.files.map((file) => getTitle(file.originalname)) },
+  })
+
+  if (existingNote) {
+    res.status(409)
+    throw new Error(
+      'You have already uploaded a note with the same title for this course'
+    )
+  }
+
+  const s3Client = getS3Client()
+
   let savedNotes = []
 
   for (const file of req.files) {
     const title = getTitle(file.originalname)
-    const uuid = getUuid(file.filename)
+    const uuid = uuidv4().trim()
     try {
-      const existingNote = await Note.findOne({
-        user: req.user._id,
-        university: req.body.university.trim(),
-        courseCode: req.body.courseCode.trim().toUpperCase(),
-        title,
-      })
-      if (existingNote) {
-        res.status(400)
-        throw new Error(
-          'You have already uploaded a note with the same title for this course'
+      try {
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: getS3Key({
+              user: req.user._id,
+              title,
+              uuid,
+            }),
+            Body: file.buffer,
+            ContentType: file.mimetype,
+          })
         )
+      } catch (s3UploadError) {
+        console.log(s3UploadError)
+        throw new Error('Failed to upload file to storage')
       }
-      const note = await Note.create({
-        user: req.user._id,
-        university: req.body.university.trim(),
-        courseCode: req.body.courseCode.trim().toUpperCase(),
-        title,
-        isAnonymous: req.body.isAnonymous === 'true',
-        uuid,
-      })
-      savedNotes.push(note)
+      try {
+        const note = await Note.create({
+          user: req.user._id,
+          university,
+          courseCode,
+          title,
+          isAnonymous: req.body.isAnonymous === 'true',
+          uuid,
+        })
+        savedNotes.push(note)
+      } catch (dbUploadError) {
+        console.log(dbUploadError)
+        await deleteFile({
+          user: req.user._id,
+          title,
+          uuid,
+        })
+        const error = new Error('Failed to save note to database')
+        if (dbUploadError.code === 11000) {
+          error.code = 11000
+        }
+        throw error
+      }
     } catch (error) {
+      console.log(error)
       let message
-      if (error.code && error.code === 11000) {
+      if (error.code === 11000) {
         message =
           'Something went wrong while uploading your notes, please try again'
       }
-      console.log(error)
-      await deleteFile({
-        user: req.user._id,
-        title,
-        uuid,
-      })
-      // for (const savedNote of savedNotes) {
-      //   await deleteFileAndNote(savedNote)
-      // }
       await Promise.allSettled(savedNotes.map(deleteFileAndNote))
-      // Optimized for efficiency
       if (message) {
         throw new Error(message)
       } else {

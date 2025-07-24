@@ -1,6 +1,7 @@
-import { promises as fs } from 'fs'
 import path from 'path'
 import Note from '../models/noteModel.js'
+import { getS3Client } from '../config/s3.js'
+import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 // Helper functions for creating file names for storage and extract information
 // from files for storage in DB
@@ -13,48 +14,42 @@ const _slugify = (title) => {
     .replace(/-+/g, '-')
 }
 
-const getStorageFileName = (note) => {
-  return `${note.uuid}.pdf`.trim()
-}
-
-const getUuid = (storageFileName) => {
-  return storageFileName.slice(0, storageFileName.lastIndexOf('.')).trim()
+const getS3Key = (note) => {
+  return `notes/${note.uuid}.pdf`
 }
 
 const getTitle = (originalFileName) => {
-  return path.basename(originalFileName, path.extname(originalFileName)).trim()
+  return path
+    .basename(originalFileName.trim(), path.extname(originalFileName))
+    .trim()
 }
 
 // Helper functions for handling cleanup following a failed upload
 const deleteFile = async (note) => {
+  const s3Client = getS3Client()
   try {
-    await fs.unlink(
-      path.resolve('backend', 'uploads', getStorageFileName(note))
+    await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: getS3Key(note),
+      })
     )
   } catch (error) {
-    console.log(
-      `Could not delete file ${getStorageFileName(note)} from storage`,
-      error
-    )
+    console.log(`Could not delete file ${getS3Key(note)} from storage`, error)
   }
 }
 
-const deleteFileAndNote = async (note) => {
-  try {
-    await fs.unlink(
-      path.resolve('backend', 'uploads', getStorageFileName(note))
-    )
-  } catch (error) {
-    console.log(
-      `Could not delete file ${getStorageFileName(note)} from storage`,
-      error
-    )
-  }
+const deleteNote = async (note) => {
+  const s3Client = getS3Client()
   try {
     await Note.findByIdAndDelete(note._id)
   } catch (error) {
     console.log(`Could not delete note ${note._id.toString()} from DB`, error)
   }
+}
+
+const deleteFileAndNote = async (note) => {
+  await Promise.allSettled([deleteFile(note), deleteNote(note)])
 }
 
 const processNoteForDisplay = (note) => {
@@ -72,8 +67,7 @@ const processNoteForDisplay = (note) => {
 }
 
 export {
-  getStorageFileName,
-  getUuid,
+  getS3Key,
   getTitle,
   deleteFile,
   deleteFileAndNote,

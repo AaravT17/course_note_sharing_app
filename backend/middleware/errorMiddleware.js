@@ -9,6 +9,9 @@ export const errorHandler = (err, req, res, next) => {
   if (message.toLowerCase() === 'invalid file format') {
     statusCode = 400
     message = 'Invalid file format'
+  } else if (message.toLowerCase() === 'missing fields') {
+    statusCode = 400
+    message = 'Missing fields'
   } else if (err.code === 'LIMIT_FILE_SIZE') {
     statusCode = 400
     message = `File too large, maximum allowed is ${MAX_FILE_SIZE_MB}MB`
