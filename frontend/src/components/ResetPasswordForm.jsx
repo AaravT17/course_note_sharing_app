@@ -50,8 +50,9 @@ function ResetPasswordForm() {
         navigate('/login')
       } catch (error) {
         toast.error(
-          error.response?.data?.message ||
-            'Something went wrong. Please try again later.'
+          error.response?.data?.message !== 'An error occurred'
+            ? error.response.data.message
+            : 'Something went wrong. Please try again later.'
         )
       } finally {
         setLoading(false)

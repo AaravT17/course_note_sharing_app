@@ -111,7 +111,6 @@ const getNoteFile = asyncHandler(async (req, res) => {
   try {
     const note = await Note.findById(req.params.id)
     if (!note) {
-      console.log(`Note ${req.params.id} not found in DB`)
       res.status(404)
       throw new Error('File not found')
     }
@@ -200,7 +199,6 @@ const uploadNotes = asyncHandler(async (req, res) => {
           })
         )
       } catch (s3UploadError) {
-        console.log(s3UploadError)
         throw new Error('Failed to upload file to storage')
       }
       try {
@@ -214,13 +212,12 @@ const uploadNotes = asyncHandler(async (req, res) => {
         })
         savedNotes.push(note)
       } catch (dbUploadError) {
-        console.log(dbUploadError)
         await deleteFile({
           user: req.user._id,
           title,
           uuid,
         })
-        const error = new Error('Failed to save note to database')
+        const error = new Error('Failed to save note to DB')
         if (dbUploadError.code === 11000) {
           error.code = 11000
         }

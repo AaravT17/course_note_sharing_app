@@ -121,6 +121,11 @@ function UploadNotesForm({
       setSuccess(true)
     } catch (error) {
       setError(true)
+      toast.error(
+        error.response?.data?.message !== 'An error occurred'
+          ? error.response.data.message
+          : 'Failed to upload notes. Please try again.'
+      )
     } finally {
       setLoading(false)
     }
@@ -137,7 +142,6 @@ function UploadNotesForm({
     }
 
     if (error) {
-      toast.error('Failed to upload notes. Please try again.')
       setError(false)
       return
     }

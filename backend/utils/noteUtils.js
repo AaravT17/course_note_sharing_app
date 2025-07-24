@@ -40,7 +40,6 @@ const deleteFile = async (note) => {
 }
 
 const deleteNote = async (note) => {
-  const s3Client = getS3Client()
   try {
     await Note.findByIdAndDelete(note._id)
   } catch (error) {

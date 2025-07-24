@@ -57,8 +57,11 @@ function NotesGrid({
       setHasMore(response.data.hasMore)
       setError(false)
     } catch (error) {
-      console.log(error.response?.data?.message || error.message)
-      toast.error('Failed to load more notes. Please try again later.')
+      toast.error(
+        error.response?.data?.message !== 'An error occurred'
+          ? error.response.data.message
+          : 'Failed to load more notes. Please try again later.'
+      )
       setError(true)
     } finally {
       setLoading(false)

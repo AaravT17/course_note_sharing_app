@@ -63,7 +63,11 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         )
       } catch (updateRecentNotesError) {}
     } catch (viewNoteError) {
-      toast.error('Failed to view note. Please try again later.')
+      toast.error(
+        viewNoteError.response?.data?.message !== 'An error occurred'
+          ? viewNoteError.response.data.message
+          : 'Failed to view note. Please try again later.'
+      )
     } finally {
       setLoading(false)
     }
@@ -101,7 +105,11 @@ function Note({ note, setNotes, loading = false, setLoading }) {
       }
       toast.success('Note deleted successfully.')
     } catch (error) {
-      toast.error('Failed to delete note. Please try again later.')
+      toast.error(
+        error.response?.data?.message !== 'An error occurred'
+          ? error.response.data.message
+          : 'Failed to delete note. Please try again later.'
+      )
     } finally {
       setLoading(false)
     }

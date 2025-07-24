@@ -8,7 +8,7 @@ export const errorHandler = (err, req, res, next) => {
   // but for robustness, this condition was added
   if (message.toLowerCase() === 'invalid file format') {
     statusCode = 400
-    message = 'Invalid file format'
+    message = 'Invalid file format, only PDF files are allowed'
   } else if (message.toLowerCase() === 'missing fields') {
     statusCode = 400
     message = 'Missing fields'
