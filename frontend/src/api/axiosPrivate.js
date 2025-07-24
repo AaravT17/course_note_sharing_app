@@ -65,6 +65,9 @@ axiosPrivate.interceptors.response.use(
           error.config.headers['Authorization'] = `Bearer ${getAccessToken()}`
           return axiosPrivate(error.config)
         } catch (refreshError) {
+          if (error.config.skipFailedRefreshHandling) {
+            return Promise.reject(refreshError)
+          }
           try {
             await axios.post(
               '/api/users/auth/logout',
