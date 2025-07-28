@@ -82,6 +82,7 @@ function LikedNotes() {
             allowLoadMore={true}
             hasMore={hasMore}
             setHasMore={setHasMore}
+            allowDelete={false}
           />
         </>
       ) : (

@@ -19,7 +19,13 @@ import {
 
 import { ChalkboardTeacher } from 'phosphor-react'
 
-function Note({ note, setNotes, loading = false, setLoading }) {
+function Note({
+  note,
+  setNotes,
+  loading = false,
+  setLoading,
+  allowDelete = false,
+}) {
   const dispatch = useDispatch()
   const { user, isLoading } = useSelector((state) => state.user)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -299,7 +305,7 @@ function Note({ note, setNotes, loading = false, setLoading }) {
       </div>
 
       {/* Right Column: Edit/Delete/Report */}
-      {isMyNote && (
+      {isMyNote && allowDelete && (
         <div className="flex flex-row gap-2 items-start self-start shrink-0">
           <button
             className="p-1 rounded hover:bg-gray-100 transition"

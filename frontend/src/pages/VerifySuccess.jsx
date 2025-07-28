@@ -15,16 +15,12 @@ function VerifySuccess() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 p-6 text-center">
-      {/* Logo */}
       <img
         src={logo}
         alt="Noteabl logo"
         className="h-16 w-auto mb-6"
       />
-
-      {/* Success icon */}
       <CheckCircle className="w-16 h-16 text-green-600 mb-4" />
-
       <h1 className="text-3xl font-bold text-green-700">Email Verified!</h1>
       <p className="mt-2 text-green-800">
         Your account has been successfully activated.

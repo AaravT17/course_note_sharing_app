@@ -3,7 +3,6 @@ import asyncHandler from 'express-async-handler'
 import User from '../models/userModel.js'
 
 const authenticateUser = asyncHandler(async (req, res, next) => {
-  let token
   if (
     !req.headers.authorization ||
     !req.headers.authorization.startsWith('Bearer')
@@ -13,11 +12,10 @@ const authenticateUser = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    token = req.headers.authorization.split(' ')[1]
+    const token = req.headers.authorization.split(' ')[1]?.trim()
     if (!token) {
       throw new Error('Unauthorized, no token')
     }
-    token = token.trim()
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET)
     if (!decoded || decoded.type !== 'access') {
       throw new Error('Unauthorized, invalid access token')
@@ -29,7 +27,6 @@ const authenticateUser = asyncHandler(async (req, res, next) => {
     }
     next()
   } catch (error) {
-    console.log(error)
     res.status(401)
     throw new Error('Unauthorized')
   }

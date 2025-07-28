@@ -31,7 +31,7 @@ function Navbar({ loading = false }) {
   return (
     <nav className="flex font-heading justify-between items-center p-4 mb-2 shadow-md">
       {/* Logo */}
-      <div className="text-3xl font-bold mr-1 sm:mr-4">
+      <div className="text-3xl font-bold mr-2 sm:mr-4">
         <Link to="/">
           <img
             src={logo}

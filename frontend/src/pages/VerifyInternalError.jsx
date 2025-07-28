@@ -15,16 +15,12 @@ function VerifyInternalError() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6 text-center">
-      {/* Logo */}
       <img
         src={logo}
         alt="Noteabl logo"
         className="h-16 w-auto mb-6"
       />
-
-      {/* Icon */}
       <AlertTriangle className="w-16 h-16 text-gray-600 mb-4" />
-
       <h1 className="text-3xl font-bold text-gray-800">Something Went Wrong</h1>
       <p className="mt-2 text-gray-700">
         Something went wrong while registering your account. Please try

@@ -82,6 +82,7 @@ function MyNotes() {
             allowLoadMore={true}
             hasMore={hasMore}
             setHasMore={setHasMore}
+            allowDelete={true}
           />
         </>
       ) : (

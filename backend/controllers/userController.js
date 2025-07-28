@@ -31,10 +31,10 @@ import {
 const registerUser = asyncHandler(async (req, res) => {
   if (
     !req.body ||
-    !req.body.name ||
-    !req.body.email ||
-    !req.body.password ||
-    !req.body.confirmPassword
+    !req.body.name?.trim() ||
+    !req.body.email?.trim() ||
+    !req.body.password?.trim() ||
+    !req.body.confirmPassword?.trim()
   ) {
     res.status(400)
     throw new Error('Missing fields')
@@ -103,7 +103,8 @@ const verifyUser = asyncHandler(async (req, res) => {
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000'
       : import.meta.env.VITE_FRONTEND_BASE_URL
-  if (!req.query || !req.query.token) {
+
+  if (!req.query || !req.query.token?.trim()) {
     return res.redirect(`${frontendBaseUrl}/verify/invalid`)
   }
 
@@ -140,7 +141,7 @@ const verifyUser = asyncHandler(async (req, res) => {
 // @route POST /api/users/login
 // @access Public
 const loginUser = asyncHandler(async (req, res) => {
-  if (!req.body || !req.body.email || !req.body.password) {
+  if (!req.body || !req.body.email?.trim() || !req.body.password?.trim()) {
     res.status(400)
     throw new Error('Missing fields')
   }
@@ -244,7 +245,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 // @route POST /api/users/forgot-password
 // @access Public
 const forgotPassword = asyncHandler(async (req, res) => {
-  if (!req.body || !req.body.email) {
+  if (!req.body || !req.body.email?.trim()) {
     res.status(400)
     throw new Error('Missing fields')
   }
@@ -283,12 +284,16 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // @route POST /api/users/reset-password
 // @access Public
 const resetPassword = asyncHandler(async (req, res) => {
-  if (!req.body || !req.body.password || !req.body.confirmPassword) {
+  if (
+    !req.body ||
+    !req.body.password?.trim() ||
+    !req.body.confirmPassword?.trim()
+  ) {
     res.status(400)
     throw new Error('Missing fields')
   }
 
-  if (!req.query || !req.query.token) {
+  if (!req.query || !req.query.token?.trim()) {
     res.status(400)
     throw new Error('Bad request')
   }

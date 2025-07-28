@@ -1,7 +1,7 @@
 import { Search, BookOpenText, FileText, Calendar } from 'lucide-react'
 import { ChalkboardTeacher } from 'phosphor-react'
 import axiosPrivate from '../api/axiosPrivate.js'
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { getAcademicYears } from '../utils/noteUtils.js'
 

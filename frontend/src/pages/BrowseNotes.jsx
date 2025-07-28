@@ -82,6 +82,7 @@ function BrowseNotes() {
             allowLoadMore={true}
             hasMore={hasMore}
             setHasMore={setHasMore}
+            allowDelete={false}
           />
         </>
       ) : (
