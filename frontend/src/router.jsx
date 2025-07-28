@@ -12,6 +12,7 @@ import VerifySuccess from './pages/VerifySuccess.jsx'
 import VerifyExpired from './pages/VerifyExpired.jsx'
 import VerifyInvalid from './pages/VerifyInvalid.jsx'
 import VerifyInternalError from './pages/VerifyInternalError.jsx'
+import NotFound from './pages/NotFound.jsx'
 import {
   getBrowseNotes,
   getMyNotes,
@@ -34,6 +35,9 @@ const router = createBrowserRouter([
   { path: '/verify/expired', element: <VerifyExpired /> },
   { path: '/verify/invalid', element: <VerifyInvalid /> },
   { path: '/verify/internal-error', element: <VerifyInternalError /> },
+
+  // Not Found route
+  { path: '*', element: <NotFound /> },
 ])
 
 export default router
