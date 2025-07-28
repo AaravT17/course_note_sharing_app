@@ -55,10 +55,8 @@ console.log('mounted notes')
 
 if (process.env.NODE_ENV === 'production') {
   console.log('mounting catch-all route')
-  const indexPath = path.resolve(__dirname, '../frontend/dist/index.html')
-  console.log('index.html exists:', fs.existsSync(indexPath))
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
+    res.send('Catch-all route works!')
   })
   console.log('mounted catch-all route')
 }
