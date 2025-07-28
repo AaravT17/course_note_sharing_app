@@ -48,4 +48,7 @@ const noteSchema = new mongoose.Schema(
   }
 )
 
+noteSchema.index({ createdAt: -1, _id: -1 })
+noteSchema.index({ likes: -1, _id: -1 })
+
 export default mongoose.model('Note', noteSchema)
