@@ -40,7 +40,7 @@ app.use('/api/users', userRouter)
 app.use('/api/notes', noteRouter)
 
 if (process.env.NODE_ENV === 'production')
-  app.get('/:wildcard(*)', (req, res) => {
+  app.use('/(*)', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
   })
 
