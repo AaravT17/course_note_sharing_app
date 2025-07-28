@@ -39,10 +39,11 @@ app.use(cookieParser())
 app.use('/api/users', userRouter)
 app.use('/api/notes', noteRouter)
 
-if (process.env.NODE_ENV === 'production')
-  app.use('/(*)', (req, res) => {
+if (process.env.NODE_ENV === 'production') {
+  app.use('/*wildcard', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
   })
+}
 
 app.use(errorHandler)
 
