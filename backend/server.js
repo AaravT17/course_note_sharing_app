@@ -12,13 +12,10 @@ import { initS3Client } from './config/s3.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import cors from 'cors'
-import fs from 'fs'
 
 const port = process.env.PORT || 8000
 
 const app = express()
-
-console.log('mounting cors')
 
 app.use(
   cors({
@@ -26,40 +23,26 @@ app.use(
     credentials: true,
   })
 )
-console.log('mounted cors')
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-if (process.env.NODE_ENV === 'production') {
-  console.log('mounting static')
+if (process.env.NODE_ENV === 'production')
   app.use(express.static(path.resolve(__dirname, '../frontend/dist')))
-  console.log('mounted static')
-}
 
-console.log('mounting mid')
 // Middleware to parse JSON and URL-encoded request body data
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 // Middleware to parse cookies
 app.use(cookieParser())
-console.log('mounted mid')
-
-console.log('mounting users')
 
 app.use('/api/users', userRouter)
-console.log('mounted users')
-console.log('mounting notes')
 app.use('/api/notes', noteRouter)
-console.log('mounted notes')
 
-if (process.env.NODE_ENV === 'production') {
-  console.log('mounting catch-all route')
-  app.get('*', (req, res) => {
-    res.send('Catch-all route works!')
+if (process.env.NODE_ENV === 'production')
+  app.get('/:wildcard(*)', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
   })
-  console.log('mounted catch-all route')
-}
 
 app.use(errorHandler)
 
