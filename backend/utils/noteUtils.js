@@ -5,7 +5,7 @@ import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 // Helper functions for creating file names for storage and extract information
 // from files for storage in DB
-const _slugify = (title) => {
+const slugify = (title) => {
   return title
     .trim()
     .toLowerCase()

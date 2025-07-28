@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { MAX_FILE_SIZE_MB, MAX_FILES } from '../config/constants.js'
 import { X, FileText } from 'lucide-react'
+import { getAcademicYears, getCurrentAcademicYear } from '../utils/noteUtils.js'
 
 function UploadNotesForm({
   loading = false,
@@ -22,12 +23,13 @@ function UploadNotesForm({
   const { isLoading } = useSelector((state) => state.user)
 
   const [notesMetadata, setNotesMetadata] = useState({
-    university: '',
     courseCode: '',
+    academicYear: getCurrentAcademicYear(),
+    instructor: '',
     isAnonymous: false,
   })
 
-  const { university, courseCode, isAnonymous } = notesMetadata
+  const { courseCode, academicYear, instructor, isAnonymous } = notesMetadata
 
   const handleCheckboxChange = (e) => {
     setNotesMetadata((prevMetadata) => ({
@@ -36,13 +38,13 @@ function UploadNotesForm({
     }))
   }
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     setNotesMetadata((prevMetadata) => {
       return {
         ...prevMetadata,
         [e.target.name]:
           e.target.name === 'courseCode'
-            ? e.target.value.toUpperCase()
+            ? e.target.value.trim().toUpperCase()
             : e.target.value,
       }
     })
@@ -94,20 +96,21 @@ function UploadNotesForm({
   const handleUpload = async (e) => {
     e.preventDefault()
     if (loading || isLoading) return
-    setLoading(true)
-    if (university.trim() === '' || courseCode.trim() === '') {
-      toast.error('Please fill in all fields')
-      setLoading(false)
+    if (!courseCode.trim() || !academicYear.trim()) {
+      toast.error('Please fill in all required fields')
       return
     }
     if (selectedFiles.length === 0) {
       toast.error('Please select at least one file to upload')
-      setLoading(false)
       return
     }
+    setLoading(true)
     const formData = new FormData()
-    formData.append('university', university.trim())
     formData.append('courseCode', courseCode.trim().toUpperCase())
+    formData.append('academicYear', academicYear.trim())
+    if (instructor.trim()) {
+      formData.append('instructor', instructor.trim())
+    }
     formData.append('isAnonymous', isAnonymous ? 'true' : 'false')
     selectedFiles.forEach((file) => {
       formData.append('note', file)
@@ -136,7 +139,12 @@ function UploadNotesForm({
       toast.success('Notes uploaded successfully!')
       setSuccess(false)
       setSelectedFiles([])
-      setNotesMetadata({ university: '', courseCode: '', isAnonymous: false })
+      setNotesMetadata({
+        courseCode: '',
+        academicYear: getCurrentAcademicYear(),
+        instructor: '',
+        isAnonymous: false,
+      })
       navigate('/my-notes')
       return
     }
@@ -158,27 +166,6 @@ function UploadNotesForm({
           className="space-y-5 font-body"
           onSubmit={handleUpload}
         >
-          {/* University */}
-          <div>
-            <label
-              htmlFor="university"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              University
-            </label>
-            <input
-              type="text"
-              id="university"
-              name="university"
-              value={university}
-              onChange={handleInputChange}
-              disabled={loading || isLoading}
-              required
-              placeholder="e.g. University of Toronto"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
           {/* Course Code */}
           <div>
             <label
@@ -192,11 +179,60 @@ function UploadNotesForm({
               id="courseCode"
               name="courseCode"
               value={courseCode}
-              onChange={handleInputChange}
+              onChange={handleChange}
               disabled={loading || isLoading}
               required
-              placeholder="e.g. CSC263"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. CSC110"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+          {/* Academic Year */}
+          <div>
+            <label
+              htmlFor="academicYear"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Academic Year
+            </label>
+            <div className="bg-white border border-gray-300 rounded-md px-2 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500">
+              <select
+                id="academicYear"
+                name="academicYear"
+                value={academicYear}
+                onChange={handleChange}
+                disabled={loading || isLoading}
+                required
+                className="w-full bg-transparent outline-none text-gray-800 text-sm"
+              >
+                {getAcademicYears().map((year) => (
+                  <option
+                    key={year}
+                    value={year}
+                  >
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Instructor */}
+          <div>
+            <label
+              htmlFor="instructor"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {'Instructor (optional)'}
+            </label>
+            <input
+              type="text"
+              id="instructor"
+              name="instructor"
+              value={instructor}
+              onChange={handleChange}
+              disabled={loading || isLoading}
+              placeholder="e.g. John Doe"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
 
@@ -218,10 +254,9 @@ function UploadNotesForm({
               multiple
               className={`w-full border border-gray-300 rounded-md px-3 py-2 file:bg-blue-800 file:mr-2 file:text-white file:px-4 file:py-2 file:hover:bg-blue-700 file:rounded-md file:border-0 file:cursor-pointer text-gray-400 ${
                 selectedFiles.length > 0 ? 'text-transparent' : ''
-              }`}
+              } text-sm`}
             />
           </div>
-
           {selectedFiles.length > 0 && (
             <div className="mt-4">
               <h3 className="text-gray-700 font-semibold mb-2">
@@ -267,7 +302,6 @@ function UploadNotesForm({
               </ul>
             </div>
           )}
-
           {/* Upload Anonymously Checkbox */}
           <div className="flex items-center space-x-2">
             <input
@@ -286,7 +320,6 @@ function UploadNotesForm({
               Upload Anonymously
             </label>
           </div>
-
           <button
             type="submit"
             className="w-full bg-blue-800 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition"

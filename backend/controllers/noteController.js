@@ -20,12 +20,12 @@ import {
   MAX_LIKED_NOTES_DASHBOARD,
 } from '../config/constants.js'
 
-// @desc Get notes metadata, optionally filter/search by university and/or course code
+// @desc Get notes metadata, with search and filter options
 // @route GET /api/notes
 // @access Private
 const getNotesMetadata = asyncHandler(async (req, res) => {
   if (
-    req.query.cursorId &&
+    req.query.cursorId?.trim() &&
     !mongoose.Types.ObjectId.isValid(req.query.cursorId.trim())
   ) {
     res.status(400)
@@ -33,8 +33,8 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
   }
 
   if (
-    (req.query.cursorId && !req.query.cursorValue) ||
-    (!req.query.cursorId && req.query.cursorValue)
+    (req.query.cursorId?.trim() && !req.query.cursorValue?.trim()) ||
+    (!req.query.cursorId?.trim() && req.query.cursorValue?.trim())
   ) {
     res.status(400)
     throw new Error('Bad request')
@@ -48,7 +48,7 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
   let cursorClause = {}
   let cursorValue = null
 
-  if (req.query.cursorId && req.query.cursorValue) {
+  if (req.query.cursorId?.trim() && req.query.cursorValue?.trim()) {
     if (sortBy === 'createdAt') {
       if (isNaN(Date.parse(req.query.cursorValue.trim()))) {
         res.status(400)
@@ -72,13 +72,16 @@ const getNotesMetadata = asyncHandler(async (req, res) => {
 
   const query = {
     user: { $ne: req.user._id }, // Exclude current user's notes
-    ...(req.query.university && {
-      university: { $regex: req.query.university.trim(), $options: 'i' },
-    }),
-    ...(req.query.courseCode && {
+    ...(req.query.courseCode?.trim() && {
       courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
-    ...(req.query.title && {
+    ...(req.query.academicYear?.trim() && {
+      academicYear: req.query.academicYear.trim(),
+    }),
+    ...(req.query.instructor?.trim() && {
+      instructor: { $regex: req.query.instructor.trim(), $options: 'i' },
+    }),
+    ...(req.query.title?.trim() && {
       title: { $regex: req.query.title.trim(), $options: 'i' },
     }),
     ...cursorClause,
@@ -160,13 +163,16 @@ const uploadNotes = asyncHandler(async (req, res) => {
     throw new Error('No files submitted')
   }
 
-  const university = req.body.university.trim()
   const courseCode = req.body.courseCode.trim().toUpperCase()
+  const academicYear = req.body.academicYear.trim()
 
   const existingNote = await Note.findOne({
     user: req.user._id,
-    university,
     courseCode,
+    academicYear,
+    ...(req.body.instructor?.trim() && {
+      instructor: req.body.instructor.trim(),
+    }),
     title: { $in: req.files.map((file) => getTitle(file.originalname)) },
   })
 
@@ -183,7 +189,7 @@ const uploadNotes = asyncHandler(async (req, res) => {
 
   for (const file of req.files) {
     const title = getTitle(file.originalname)
-    const uuid = uuidv4().trim()
+    const uuid = uuidv4()
     try {
       try {
         await s3Client.send(
@@ -204,10 +210,13 @@ const uploadNotes = asyncHandler(async (req, res) => {
       try {
         const note = await Note.create({
           user: req.user._id,
-          university,
           courseCode,
+          academicYear,
+          ...(req.body.instructor?.trim() && {
+            instructor: req.body.instructor.trim(),
+          }),
           title,
-          isAnonymous: req.body.isAnonymous === 'true',
+          isAnonymous: req.body.isAnonymous?.trim() === 'true',
           uuid,
         })
         savedNotes.push(note)
@@ -352,7 +361,7 @@ const updateNoteRating = asyncHandler(async (req, res) => {
 // @access Private
 const getMyNotes = asyncHandler(async (req, res) => {
   if (
-    req.query.cursorId &&
+    req.query.cursorId?.trim() &&
     !mongoose.Types.ObjectId.isValid(req.query.cursorId.trim())
   ) {
     res.status(400)
@@ -360,8 +369,8 @@ const getMyNotes = asyncHandler(async (req, res) => {
   }
 
   if (
-    (req.query.cursorId && !req.query.cursorValue) ||
-    (!req.query.cursorId && req.query.cursorValue)
+    (req.query.cursorId?.trim() && !req.query.cursorValue?.trim()) ||
+    (!req.query.cursorId?.trim() && req.query.cursorValue?.trim())
   ) {
     res.status(400)
     throw new Error('Bad request')
@@ -375,7 +384,7 @@ const getMyNotes = asyncHandler(async (req, res) => {
   let cursorClause = {}
   let cursorValue = null
 
-  if (req.query.cursorId && req.query.cursorValue) {
+  if (req.query.cursorId?.trim() && req.query.cursorValue?.trim()) {
     if (sortBy === 'createdAt') {
       if (isNaN(Date.parse(req.query.cursorValue.trim()))) {
         res.status(400)
@@ -399,13 +408,16 @@ const getMyNotes = asyncHandler(async (req, res) => {
 
   const query = {
     user: req.user._id,
-    ...(req.query.university && {
-      university: { $regex: req.query.university.trim(), $options: 'i' },
-    }),
-    ...(req.query.courseCode && {
+    ...(req.query.courseCode?.trim() && {
       courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
-    ...(req.query.title && {
+    ...(req.query.academicYear?.trim() && {
+      academicYear: req.query.academicYear.trim(),
+    }),
+    ...(req.query.instructor?.trim() && {
+      instructor: { $regex: req.query.instructor.trim(), $options: 'i' },
+    }),
+    ...(req.query.title?.trim() && {
       title: { $regex: req.query.title.trim(), $options: 'i' },
     }),
     ...cursorClause,
@@ -435,7 +447,7 @@ const getMyNotes = asyncHandler(async (req, res) => {
 // @access Private
 const getLikedNotes = asyncHandler(async (req, res) => {
   if (
-    req.query.cursorId &&
+    req.query.cursorId?.trim() &&
     !mongoose.Types.ObjectId.isValid(req.query.cursorId.trim())
   ) {
     res.status(400)
@@ -443,8 +455,8 @@ const getLikedNotes = asyncHandler(async (req, res) => {
   }
 
   if (
-    (req.query.cursorId && !req.query.cursorValue) ||
-    (!req.query.cursorId && req.query.cursorValue)
+    (req.query.cursorId?.trim() && !req.query.cursorValue?.trim()) ||
+    (!req.query.cursorId?.trim() && req.query.cursorValue?.trim())
   ) {
     res.status(400)
     throw new Error('Bad request')
@@ -458,7 +470,7 @@ const getLikedNotes = asyncHandler(async (req, res) => {
   let cursorClause = {}
   let cursorValue = null
 
-  if (req.query.cursorId && req.query.cursorValue) {
+  if (req.query.cursorId?.trim() && req.query.cursorValue?.trim()) {
     if (sortBy === 'createdAt') {
       if (isNaN(Date.parse(req.query.cursorValue.trim()))) {
         res.status(400)
@@ -482,13 +494,16 @@ const getLikedNotes = asyncHandler(async (req, res) => {
 
   const query = {
     _id: { $in: req.user.likedNotes },
-    ...(req.query.university && {
-      university: { $regex: req.query.university.trim(), $options: 'i' },
-    }),
-    ...(req.query.courseCode && {
+    ...(req.query.courseCode?.trim() && {
       courseCode: { $regex: req.query.courseCode.trim(), $options: 'i' },
     }),
-    ...(req.query.title && {
+    ...(req.query.academicYear?.trim() && {
+      academicYear: req.query.academicYear.trim(),
+    }),
+    ...(req.query.instructor?.trim() && {
+      instructor: { $regex: req.query.instructor.trim(), $options: 'i' },
+    }),
+    ...(req.query.title?.trim() && {
       title: { $regex: req.query.title.trim(), $options: 'i' },
     }),
     ...cursorClause,
@@ -530,9 +545,14 @@ const updateMyNote = asyncHandler(async (req, res) => {
       throw new Error('Forbidden, you can only update your own notes')
     }
 
-    if (req.body.university) note.university = req.body.university.trim()
-    if (req.body.courseCode)
+    if (req.body.courseCode?.trim())
       note.courseCode = req.body.courseCode.trim().toUpperCase()
+    if (req.body.academicYear?.trim())
+      note.academicYear = req.body.academicYear.trim()
+    if (req.body.instructor?.trim())
+      note.instructor = req.body.instructor.trim()
+    if (req.body.isAnonymous?.trim())
+      note.isAnonymous = req.body.isAnonymous.trim() === 'true'
 
     const updatedNote = await note.save()
 

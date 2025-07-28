@@ -1,7 +1,9 @@
-import { Search, BookOpenText, GraduationCap, Landmark } from 'lucide-react'
+import { Search, BookOpenText, FileText, Calendar } from 'lucide-react'
+import { ChalkboardTeacher } from 'phosphor-react'
 import axiosPrivate from '../api/axiosPrivate.js'
 import { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
+import { getAcademicYears } from '../utils/noteUtils.js'
 
 function NotesSearchBar({
   searchBarTitle,
@@ -16,7 +18,7 @@ function NotesSearchBar({
   setLoading,
   setHasMore = () => {},
 }) {
-  const { title, courseCode, university } = searchQuery
+  const { title, courseCode, academicYear, instructor } = searchQuery
   const { isLoading } = useSelector((state) => state.user)
 
   const handleChangeSearchQuery = (e) => {
@@ -35,7 +37,10 @@ function NotesSearchBar({
         params: {
           ...(title.trim() !== '' && { title: title.trim() }),
           ...(courseCode.trim() !== '' && { courseCode: courseCode.trim() }),
-          ...(university.trim() !== '' && { university: university.trim() }),
+          ...(academicYear.trim() !== '' && {
+            academicYear: academicYear.trim(),
+          }),
+          ...(instructor.trim() !== '' && { instructor: instructor.trim() }),
           sortBy,
         },
       })
@@ -57,7 +62,8 @@ function NotesSearchBar({
     setSearchQuery({
       title: '',
       courseCode: '',
-      university: '',
+      academicYear: '',
+      instructor: '',
     })
     if (sortBy !== 'createdAt') {
       // Changing sortBy by triggers a re-fetch through the useEffect
@@ -100,10 +106,10 @@ function NotesSearchBar({
           {searchBarTitle}
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto_auto] gap-4 font-body">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-body">
           {/* Title */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
-            <BookOpenText className="w-5 h-5 text-gray-400 mr-2" />
+            <FileText className="w-5 h-5 text-gray-400 mr-2" />
             <input
               type="text"
               id="title"
@@ -117,7 +123,7 @@ function NotesSearchBar({
           </div>
           {/* Course Code */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
-            <GraduationCap className="w-5 h-5 text-gray-400 mr-2" />
+            <BookOpenText className="w-5 h-5 text-gray-400 mr-2" />
             <input
               type="text"
               id="courseCode"
@@ -129,20 +135,52 @@ function NotesSearchBar({
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
           </div>
-          {/* University */}
+          {/* Academic Year */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
-            <Landmark className="w-5 h-5 text-gray-400 mr-2" />
-            <input
-              type="text"
-              id="university"
-              name="university"
-              value={university}
+            <Calendar className="w-5 h-5 text-gray-400 mr-1 shrink-0" />
+            <select
+              id="academicYear"
+              name="academicYear"
+              value={academicYear}
               onChange={handleChangeSearchQuery}
               disabled={loading || isLoading}
-              placeholder="Search by university"
+              className={`flex-1 bg-transparent outline-none text-sm ${
+                !academicYear?.trim() ? 'text-gray-400' : 'text-gray-800'
+              } w-full border-none`}
+            >
+              <option value="">Search by academic year</option>
+              {getAcademicYears().map((year) => (
+                <option
+                  key={year}
+                  value={year}
+                >
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Instructor */}
+          <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
+            <ChalkboardTeacher
+              size={20} // same visual size as w-5 h-5
+              weight="regular" // not bold, to match Lucide's 2px stroke
+              className="text-gray-400 mr-2 shrink-0"
+            />
+            <input
+              type="text"
+              id="instructor"
+              name="instructor"
+              value={instructor}
+              onChange={handleChangeSearchQuery}
+              disabled={loading || isLoading}
+              placeholder="Search by instructor"
               className="flex-1 bg-transparent outline-none text-sm text-gray-800"
             />
           </div>
+        </div>
+
+        <div className="mt-4 font-body flex flex-wrap justify-center gap-4">
           {/* Search Button */}
           <button
             type="submit"
@@ -152,10 +190,11 @@ function NotesSearchBar({
             <Search className="w-5 h-5 mr-2" />
             Search
           </button>
-          {/* Sort By Dropdown */}
+
+          {/* Sort Dropdown */}
           <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm">
             <label
-              htmlFor="sort"
+              htmlFor="sortBy"
               className="text-sm text-gray-600 mr-2 whitespace-nowrap"
             >
               Sort by:
@@ -164,9 +203,7 @@ function NotesSearchBar({
               id="sortBy"
               name="sortBy"
               value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value)
-              }}
+              onChange={(e) => setSortBy(e.target.value)}
               disabled={loading || isLoading}
               className="text-sm bg-transparent outline-none text-gray-800"
             >
@@ -174,11 +211,12 @@ function NotesSearchBar({
               <option value="likes">Most Liked</option>
             </select>
           </div>
-          {/* Clear Filters Button */}
+
+          {/* Clear Filters */}
           <button
             type="button"
             onClick={handleClearFilters}
-            className="flex items-center text-sm text-white/80 hover:text-white underline font-medium transition whitespace-nowrap"
+            className="text-sm text-white/80 hover:text-white underline font-medium transition whitespace-nowrap"
             disabled={loading || isLoading}
           >
             Clear filters

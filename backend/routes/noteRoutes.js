@@ -15,7 +15,11 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (!req.body || !req.body.university || !req.body.courseCode) {
+    if (
+      !req.body ||
+      !req.body.courseCode?.trim() ||
+      !req.body.academicYear?.trim()
+    ) {
       return cb(new Error('Missing fields'), false)
     }
 

@@ -57,7 +57,8 @@ function Dashboard() {
             searchQuery={{
               title: '',
               courseCode: '',
-              university: '',
+              academicYear: '',
+              instructor: '',
             }}
             sortBy="createdAt"
             allowLoadMore={false}
@@ -76,7 +77,8 @@ function Dashboard() {
             searchQuery={{
               title: '',
               courseCode: '',
-              university: '',
+              academicYear: '',
+              instructor: '',
             }}
             sortBy="createdAt"
             allowLoadMore={false}

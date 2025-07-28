@@ -16,7 +16,8 @@ function MyNotes() {
   const [searchQuery, setSearchQuery] = useState({
     title: '',
     courseCode: '',
-    university: '',
+    academicYear: '',
+    instructor: '',
   })
   const [sortBy, setSortBy] = useState('createdAt')
   const [hasMore, setHasMore] = useState(notesData.hasMore)

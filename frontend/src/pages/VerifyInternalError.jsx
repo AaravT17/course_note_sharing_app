@@ -18,7 +18,7 @@ function VerifyInternalError() {
       {/* Logo */}
       <img
         src={logo}
-        alt="Noteable logo"
+        alt="Noteabl logo"
         className="h-16 w-auto mb-6"
       />
 

@@ -15,7 +15,7 @@ function VerifyInvalid() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-red-50 p-6 text-center">
       <img
         src={logo}
-        alt="Noteable logo"
+        alt="Noteabl logo"
         className="h-16 w-auto mb-6"
       />
       <XCircle className="w-16 h-16 text-red-600 mb-4" />

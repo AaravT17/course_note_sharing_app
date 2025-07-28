@@ -8,17 +8,20 @@ const noteSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    university: {
-      type: String,
-      required: [true, 'Please add a university'],
-    },
-    courseCode: {
-      type: String,
-      required: [true, 'Please add a course code'],
-    },
     title: {
       type: String,
       required: true,
+    },
+    courseCode: {
+      type: String,
+      required: true,
+    },
+    academicYear: {
+      type: String,
+      required: true,
+    },
+    instructor: {
+      type: String,
     },
     isAnonymous: {
       type: Boolean,

@@ -43,7 +43,7 @@ const sendVerificationEmail = async (toEmail, verificationLink) => {
   })
 
   const mailOptions = {
-    from: `Noteable <${process.env.EMAIL_FROM}>`,
+    from: `Noteabl <${process.env.EMAIL_FROM}>`,
     to: toEmail,
     subject: 'Verify your account',
     html: `<p>Please verify your account by clicking the link: <a href="${verificationLink}">Verify Account</a></p>`,
@@ -69,7 +69,7 @@ const sendPasswordResetEmail = async (toEmail, passwordResetLink) => {
   })
 
   const mailOptions = {
-    from: `Noteable <${process.env.EMAIL_FROM}>`,
+    from: `Noteabl <${process.env.EMAIL_FROM}>`,
     to: toEmail,
     subject: 'Reset your password',
     html: `<p>Please click the link to reset your password: <a href="${passwordResetLink}">Reset password</a></p>`,

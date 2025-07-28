@@ -50,7 +50,7 @@ function LoginForm() {
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
         <h2 className="text-2xl font-heading font-bold text-gray-800 text-center mb-6">
-          Login to Noteable
+          Login to Noteabl
         </h2>
 
         <form

@@ -9,13 +9,15 @@ import axiosPrivate from '../api/axiosPrivate.js'
 
 import {
   BookOpenText,
-  GraduationCap,
+  Calendar,
   Clock,
   User,
   ThumbsUp,
   ThumbsDown,
   Trash,
 } from 'lucide-react'
+
+import { ChalkboardTeacher } from 'phosphor-react'
 
 function Note({ note, setNotes, loading = false, setLoading }) {
   const dispatch = useDispatch()
@@ -244,23 +246,36 @@ function Note({ note, setNotes, loading = false, setLoading }) {
         {/* Metadata */}
         <div className="text-sm text-gray-600 flex flex-col gap-1">
           <span className="flex items-center gap-1">
-            <GraduationCap className="w-4 h-4" /> {note.university}
-          </span>
-          <span className="flex items-center gap-1">
             <BookOpenText className="w-4 h-4" /> {note.courseCode}
           </span>
           <span className="flex items-center gap-1">
-            <User className="w-4 h-4" />{' '}
-            {isMyNote ? 'You' : note.isAnonymous ? '-' : note.user?.name || '-'}
+            <Calendar className="w-4 h-4" /> {note.academicYear}
           </span>
-          <span className="flex items-center gap-1 text-gray-400 text-xs mt-1">
-            <Clock className="w-4 h-4" />{' '}
-            {new Date(note.createdAt).toLocaleString()}
+          <span className="flex items-center gap-1">
+            <ChalkboardTeacher
+              size={16}
+              weight="regular"
+              className="shrink-0"
+            />
+            {note.instructor || '-'}
           </span>
+          <div className="flex flex-col gap-1 mt-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <User className="w-4 h-4" />
+              {isMyNote
+                ? 'You'
+                : note.isAnonymous
+                ? '-'
+                : note.user?.name || '-'}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              {new Date(note.createdAt).toLocaleString()}
+            </span>
+          </div>
         </div>
 
         {/* Rating Buttons */}
-
         <div className="flex gap-4 mt-2 items-center text-sm text-gray-600">
           <button
             className={`flex items-center gap-1 transition ${

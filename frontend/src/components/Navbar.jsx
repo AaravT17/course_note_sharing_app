@@ -35,8 +35,8 @@ function Navbar({ loading = false }) {
         <Link to="/">
           <img
             src={logo}
-            alt="Noteable logo"
-            className="h-12 min-w-40 w-auto"
+            alt="Noteabl logo"
+            className="h-12 min-w-48 w-auto"
             onClick={blockNavOnLoading}
           />
         </Link>

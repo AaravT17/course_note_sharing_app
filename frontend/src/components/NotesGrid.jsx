@@ -15,7 +15,8 @@ function NotesGrid({
   searchQuery = {
     title: '',
     courseCode: '',
-    university: '',
+    academicYear: '',
+    instructor: '',
   },
   sortBy = 'createdAt',
   allowLoadMore = false,
@@ -24,7 +25,7 @@ function NotesGrid({
 }) {
   const { isLoading } = useSelector((state) => state.user)
 
-  const { title, courseCode, university } = searchQuery
+  const { title, courseCode, academicYear, instructor } = searchQuery
 
   let emptyMsg = 'No notes were found.'
   if (notesGridTitle === 'Recently Viewed') {
@@ -46,7 +47,10 @@ function NotesGrid({
         params: {
           ...(title.trim() !== '' && { title: title.trim() }),
           ...(courseCode.trim() !== '' && { courseCode: courseCode.trim() }),
-          ...(university.trim() !== '' && { university: university.trim() }),
+          ...(academicYear.trim() !== '' && {
+            academicYear: academicYear.trim(),
+          }),
+          ...(instructor.trim() !== '' && { instructor: instructor.trim() }),
           sortBy,
           cursorId: lastNote._id.toString(),
           cursorValue:
