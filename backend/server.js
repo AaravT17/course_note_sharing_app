@@ -12,6 +12,7 @@ import { initS3Client } from './config/s3.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import cors from 'cors'
+import fs from 'fs'
 
 const port = process.env.PORT || 8000
 
@@ -54,6 +55,8 @@ console.log('mounted notes')
 
 if (process.env.NODE_ENV === 'production') {
   console.log('mounting catch-all route')
+  const indexPath = path.resolve(__dirname, '../frontend/dist/index.html')
+  console.log('index.html exists:', fs.existsSync(indexPath))
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
   })
