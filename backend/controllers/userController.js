@@ -99,10 +99,7 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route GET /api/users/verify
 // @access Public
 const verifyUser = asyncHandler(async (req, res) => {
-  const frontendBaseUrl =
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : import.meta.env.VITE_FRONTEND_BASE_URL
+  const frontendBaseUrl = process.env.VITE_FRONTEND_BASE_URL || ''
 
   if (!req.query || !req.query.token?.trim()) {
     return res.redirect(`${frontendBaseUrl}/verify/invalid`)
@@ -269,7 +266,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   try {
     await user.save()
-    const passwordResetLink = `${process.env.VITE_FRONTEND_BASE_URL}/reset-password?token=${token}`
+    const passwordResetLink = `${
+      process.env.VITE_FRONTEND_BASE_URL || ''
+    }/reset-password?token=${token}`
     await sendPasswordResetEmail(email, passwordResetLink)
   } catch (error) {
     console.log(error)

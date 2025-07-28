@@ -9,10 +9,25 @@ import { errorHandler } from './middleware/errorMiddleware.js'
 import connectDB from './config/db.js'
 import { deleteUnverifiedUsers } from './utils/cleanup.js'
 import { initS3Client } from './config/s3.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import cors from 'cors'
 
 const port = process.env.PORT || 8000
 
 const app = express()
+
+app.use(
+  cors({
+    origin: process.env.VITE_FRONTEND_BASE_URL || 'http://localhost:3000',
+    credentials: true,
+  })
+)
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+app.use(express.static(path.resolve(__dirname, '../frontend/dist')))
 
 // Middleware to parse JSON and URL-encoded request body data
 app.use(express.json())
@@ -22,6 +37,10 @@ app.use(cookieParser())
 
 app.use('/api/users', userRouter)
 app.use('/api/notes', noteRouter)
+
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
+})
 
 app.use(errorHandler)
 
