@@ -23,7 +23,7 @@ const router = express.Router()
 
 router.post('/', registerUser)
 
-router.get('/verify', verifyUser)
+router.post('/verify', verifyUser)
 
 router.post('/login', loginUser)
 

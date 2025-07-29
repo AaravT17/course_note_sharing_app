@@ -31,6 +31,7 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!token || loading) return
     if (!password.trim() || !confirmPassword.trim()) {
       toast.error('Please fill in all fields')
     } else if (password.trim() !== confirmPassword.trim()) {
@@ -42,7 +43,8 @@ function ResetPasswordForm() {
     } else {
       try {
         setLoading(true)
-        await axiosPublic.post(`/api/users/reset-password?token=${token}`, {
+        await axiosPublic.post('/api/users/reset-password', {
+          token,
           password: password.trim(),
           confirmPassword: confirmPassword.trim(),
         })
@@ -156,7 +158,7 @@ function ResetPasswordForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={!token || loading}
             className="w-full bg-blue-800 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition"
           >
             Reset Password

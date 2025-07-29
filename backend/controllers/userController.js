@@ -81,7 +81,7 @@ const registerUser = asyncHandler(async (req, res) => {
       ),
     })
 
-    const verificationLink = `${process.env.VITE_BACKEND_BASE_URL}/api/users/verify?token=${token}`
+    const verificationLink = `${process.env.VITE_FRONTEND_BASE_URL}/verify?token=${token}`
 
     await sendVerificationEmail(email, verificationLink)
 
@@ -96,21 +96,19 @@ const registerUser = asyncHandler(async (req, res) => {
 })
 
 // @desc Verify user's email
-// @route GET /api/users/verify
+// @route POST /api/users/verify
 // @access Public
 const verifyUser = asyncHandler(async (req, res) => {
-  const frontendBaseUrl = process.env.VITE_FRONTEND_BASE_URL || ''
-
-  if (!req.query || !req.query.token?.trim()) {
-    return res.redirect(`${frontendBaseUrl}/verify/invalid`)
+  if (!req.body || !req.body.token?.trim()) {
+    return res.status(400).json({ message: 'Invalid link' })
   }
 
   const user = await User.findOne({
-    verificationToken: hashToken(req.query.token.trim()),
+    verificationToken: hashToken(req.body.token.trim()),
   })
 
   if (!user) {
-    return res.redirect(`${frontendBaseUrl}/verify/invalid`)
+    return res.status(400).json({ message: 'Invalid link' })
   }
 
   if (user.verificationTokenExpiry < Date.now()) {
@@ -119,7 +117,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     } catch (error) {
       console.log(`Could not delete user ${user._id.toString()}`)
     }
-    return res.redirect(`${frontendBaseUrl}/verify/expired`)
+    return res.status(400).json({ message: 'Expired link' })
   }
 
   user.isVerified = true
@@ -127,10 +125,10 @@ const verifyUser = asyncHandler(async (req, res) => {
   user.verificationTokenExpiry = undefined
   try {
     await user.save()
-    return res.redirect(`${frontendBaseUrl}/verify/success`)
+    return res.status(200).json({ message: 'Success' })
   } catch (error) {
     console.log(error)
-    return res.redirect(`${frontendBaseUrl}/verify/internal-error`)
+    return res.status(500).json({ message: 'Internal error' })
   }
 })
 
@@ -292,11 +290,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw new Error('Missing fields')
   }
 
-  if (!req.query || !req.query.token?.trim()) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
   const password = req.body.password.trim()
   const confirmPassword = req.body.confirmPassword.trim()
 
@@ -312,8 +305,13 @@ const resetPassword = asyncHandler(async (req, res) => {
     )
   }
 
+  if (!req.body.token?.trim()) {
+    res.status(400)
+    throw new Error('Bad request')
+  }
+
   const user = await User.findOne({
-    passwordResetToken: hashToken(req.query.token.trim()),
+    passwordResetToken: hashToken(req.body.token.trim()),
   })
 
   if (!user) {
