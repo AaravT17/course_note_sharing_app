@@ -22,7 +22,7 @@ app.use((req, res, next) => {
     req.headers?.host === 'noteabl.onrender.com' ||
     req.headers?.host === 'www.noteablapp.com'
   ) {
-    res.redirect(301, `${process.env.VITE_FRONTEND_BASE_URL}${req.url}`)
+    return res.redirect(301, `${process.env.VITE_FRONTEND_BASE_URL}${req.url}`)
   }
   next()
 })
