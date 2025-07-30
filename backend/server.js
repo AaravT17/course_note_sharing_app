@@ -17,6 +17,16 @@ const port = process.env.PORT || 8000
 
 const app = express()
 
+app.use((req, res, next) => {
+  if (
+    req.headers?.host === 'noteabl.onrender.com' ||
+    req.headers?.host === 'www.noteablapp.com'
+  ) {
+    res.redirect(301, `${process.env.VITE_FRONTEND_BASE_URL}${req.url}`)
+  }
+  next()
+})
+
 app.use(
   cors({
     origin: process.env.VITE_FRONTEND_BASE_URL || 'http://localhost:3000',
