@@ -2,12 +2,13 @@ import User from '../models/userModel.js'
 
 const deleteUnverifiedUsers = async () => {
   try {
-    await User.deleteMany({
+    const deletedUsers = await User.deleteMany({
       isVerified: false,
-      verificationTokenExpiry: { $lt: Date.now() },
+      verificationTokenExpiry: { $lt: new Date() },
     })
+    console.log(`Deleted ${deletedUsers.deletedCount} unverified users`)
   } catch (error) {
-    console.log('Cleanup failed', error)
+    console.log('Cleanup failed:', error)
   }
 }
 

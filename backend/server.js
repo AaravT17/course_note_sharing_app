@@ -60,7 +60,10 @@ app.use(errorHandler)
 async function main() {
   await connectDB()
   // Ensures DB connection is established before the server starts listening for requests
-  cron.schedule('0 0 * * *', deleteUnverifiedUsers)
+  cron.schedule('0 0 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] Running daily cleanup...`)
+    await deleteUnverifiedUsers()
+  })
   console.log('Cleanup process active...')
   initS3Client()
   app.listen(port, () => console.log(`Server running on port ${port}...`))
