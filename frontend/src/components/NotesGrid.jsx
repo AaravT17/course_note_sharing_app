@@ -22,7 +22,7 @@ function NotesGrid({
   allowLoadMore = false,
   hasMore = false,
   setHasMore = () => {},
-  allowDelete = false,
+  allowEditAndDelete = false,
 }) {
   const { isLoading } = useSelector((state) => state.user)
 
@@ -96,7 +96,7 @@ function NotesGrid({
                 setNotes={setNotes}
                 loading={loading}
                 setLoading={setLoading}
-                allowDelete={allowDelete}
+                allowEditAndDelete={allowEditAndDelete}
               />
             ))}
           </div>

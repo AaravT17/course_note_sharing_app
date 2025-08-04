@@ -37,7 +37,7 @@ router.post('/auth/refresh', refreshAccessToken)
 
 router.get('/me', authenticateUser, getMe)
 
-router.put('/me', authenticateUser, updateMe)
+router.patch('/me', authenticateUser, updateMe)
 
 router.delete('/me', authenticateUser, deleteMe)
 
@@ -45,7 +45,7 @@ router.get('/me/notes', authenticateUser, getMyNotes)
 
 router.get('/me/notes/liked', authenticateUser, getLikedNotes)
 
-router.put('/me/notes/:id', authenticateUser, updateMyNote)
+router.patch('/me/notes/:id', authenticateUser, updateMyNote)
 
 router.delete('/me/notes/:id', authenticateUser, deleteMyNote)
 

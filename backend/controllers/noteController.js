@@ -523,35 +523,53 @@ const getLikedNotes = asyncHandler(async (req, res) => {
 })
 
 // @desc Update current user's note
-// @route PUT /api/users/me/notes/:id
+// @route PATCH /api/users/me/notes/:id
 // @access Private
 const updateMyNote = asyncHandler(async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id)
+    const courseCode = req.body.courseCode?.trim()
+    const academicYear = req.body.academicYear?.trim()
+    const instructor = req.body.instructor?.trim()
+
+    if (!courseCode || !academicYear) {
+      res.status(400)
+      throw new Error('Please fill in all required fields')
+    }
+
+    const note = await Note.findById(req.params.id).populate('user', 'name _id')
 
     if (!note) {
       res.status(404)
       throw new Error('Note not found')
     }
 
-    if (!note.user.equals(req.user._id)) {
+    if (!note.user) {
+      res.status(500)
+      throw new Error('Something went wrong, please try again')
+    }
+
+    if (!note.user._id.equals(req.user._id)) {
       res.status(403)
       throw new Error('Forbidden, you can only update your own notes')
     }
 
-    const courseCode = req.body.courseCode?.trim()
-    const academicYear = req.body.academicYear?.trim()
-    const instructor = req.body.instructor?.trim()
-    const isAnonymous = req.body.isAnonymous?.trim()
+    note.courseCode = courseCode.toUpperCase()
+    note.academicYear = academicYear
+    if (instructor) {
+      note.instructor = instructor
+    } else {
+      note.instructor = undefined
+    }
+    if (typeof req.body.isAnonymous === 'boolean')
+      note.isAnonymous = req.body.isAnonymous
 
-    if (courseCode) note.courseCode = courseCode.toUpperCase()
-    if (academicYear) note.academicYear = academicYear
-    if (instructor) note.instructor = instructor
-    if (isAnonymous) note.isAnonymous = isAnonymous === 'true'
+    const processedNote = processNoteForDisplay(note)
 
-    const updatedNote = await note.save()
+    note.user = note.user._id
 
-    res.status(200).json(updatedNote)
+    await note.save()
+
+    res.status(200).json(processedNote)
   } catch (error) {
     console.log(error)
     throw error

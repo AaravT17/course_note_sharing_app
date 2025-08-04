@@ -64,7 +64,7 @@ function Dashboard() {
             allowLoadMore={false}
             hasMore={false}
             setHasMore={() => {}}
-            allowDelete={false}
+            allowEditAndDelete={false}
           />
           <NotesGrid
             notesGridTitle="Liked Notes"
@@ -85,7 +85,7 @@ function Dashboard() {
             allowLoadMore={false}
             hasMore={false}
             setHasMore={() => {}}
-            allowDelete={false}
+            allowEditAndDelete={false}
           />
         </>
       ) : (

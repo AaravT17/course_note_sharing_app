@@ -426,7 +426,7 @@ const getMe = asyncHandler(async (req, res) => {
 })
 
 // @desc Update current user's data
-// @route PUT /api/users/me
+// @route PATCH /api/users/me
 // @access Private
 const updateMe = asyncHandler(async (req, res) => {
   if (!req.body) {
