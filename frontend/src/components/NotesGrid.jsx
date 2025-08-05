@@ -40,8 +40,8 @@ function NotesGrid({
   const handleLoadMore = async (e) => {
     e.preventDefault()
     if (loading || isLoading) return
-    const lastNote = notes[notes.length - 1]
-    if (!lastNote) return
+    const cursor = findCursor(notes, sortBy)
+    if (!cursor) return
     setLoading(true)
     try {
       const response = await axiosPrivate.get(apiRoute, {
@@ -53,9 +53,9 @@ function NotesGrid({
           }),
           ...(instructor.trim() !== '' && { instructor: instructor.trim() }),
           sortBy,
-          cursorId: lastNote._id.toString(),
+          cursorId: cursor._id.toString(),
           cursorValue:
-            sortBy === 'createdAt' ? lastNote.createdAt.trim() : lastNote.likes,
+            sortBy === 'createdAt' ? cursor.createdAt.trim() : cursor.likes,
         },
       })
       setNotes((prevNotes) => [...prevNotes, ...response.data.notes])
@@ -71,6 +71,22 @@ function NotesGrid({
     } finally {
       setLoading(false)
     }
+  }
+
+  const findCursor = (notes, sortBy) => {
+    if (notes.length === 0) return null
+    let cursor
+    for (const note of notes) {
+      if (
+        !cursor ||
+        note[sortBy] < cursor[sortBy] ||
+        (note[sortBy] === cursor[sortBy] &&
+          note._id.toString() < cursor._id.toString())
+      ) {
+        cursor = note
+      }
+    }
+    return cursor
   }
 
   return (
