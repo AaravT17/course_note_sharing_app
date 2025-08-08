@@ -4,11 +4,11 @@ const deleteUnverifiedUsers = async () => {
   try {
     const deletedUsers = await User.deleteMany({
       isVerified: false,
-      verificationTokenExpiry: { $lt: new Date() },
+      verificationTokenExpiry: { $lte: new Date() },
     })
     console.log(`Deleted ${deletedUsers.deletedCount} unverified users`)
   } catch (error) {
-    console.log('Cleanup failed:', error)
+    console.error('Cleanup failed:', error)
   }
 }
 

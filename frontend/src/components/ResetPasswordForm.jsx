@@ -38,7 +38,7 @@ function ResetPasswordForm() {
       toast.error('Passwords do not match')
     } else if (!isStrongPassword(password.trim())) {
       toast.error(
-        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character`
+        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character`
       )
     } else {
       try {

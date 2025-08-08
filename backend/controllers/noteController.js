@@ -20,91 +20,36 @@ import {
   MAX_LIKED_NOTES_DASHBOARD,
 } from '../config/constants.js'
 
-// @desc Get notes metadata, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
+// @desc Get notes uploaded by other users, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
 // Supports cursor-based pagination
 // @route GET /api/notes
 // @access Private
-const getNotesMetadata = asyncHandler(async (req, res) => {
-  const cursorId = req.query.cursorId?.trim()
-  let cursorValue = req.query.cursorValue?.trim()
-  let cursorClause = {}
-
-  const validSortFields = ['createdAt', 'likes']
-  let sortBy = req.query.sortBy?.trim()
-  sortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt'
-
-  const title = req.query.title?.trim()
-  const courseCode = req.query.courseCode?.trim()
-  const academicYear = req.query.academicYear?.trim()
-  const instructor = req.query.instructor?.trim()
-
-  if (cursorId && !mongoose.Types.ObjectId.isValid(cursorId)) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
-  if ((cursorId && !cursorValue) || (!cursorId && cursorValue)) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
-  if (cursorId && cursorValue) {
-    if (sortBy === 'createdAt') {
-      if (isNaN(Date.parse(cursorValue))) {
-        res.status(400)
-        throw new Error('Bad request')
-      }
-      cursorValue = new Date(cursorValue)
-    } else {
-      if (!Number.isInteger(Number(cursorValue))) {
-        res.status(400)
-        throw new Error('Bad request')
-      }
-      cursorValue = Number(cursorValue)
+const getBrowseNotes = asyncHandler(async (req, res) => {
+  const sortBy = getSortBy(req.query)
+  let searchQuery
+  try {
+    searchQuery = {
+      user: { $ne: req.user._id },
+      ...buildSearchQuery(req.query, sortBy),
     }
-    cursorClause = {
-      $or: [
-        { [sortBy]: { $lt: cursorValue } },
-        { [sortBy]: cursorValue, _id: { $lt: cursorId } },
-      ],
-    }
+  } catch (error) {
+    res.status(400)
+    throw error
   }
-
-  const query = {
-    user: { $ne: req.user._id }, // Exclude current user's notes
-    ...(title && {
-      title: { $regex: title, $options: 'i' },
-    }),
-    ...(courseCode && {
-      courseCode: { $regex: courseCode, $options: 'i' },
-    }),
-    ...(academicYear && { academicYear }),
-    ...(instructor && {
-      instructor: { $regex: instructor, $options: 'i' },
-    }),
-    ...cursorClause,
-  }
-
-  const limit = MAX_NOTES_PER_SEARCH
 
   try {
-    const notes = await Note.find(query)
-      .sort({ [sortBy]: -1, _id: -1 })
-      .limit(limit + 1)
-      .populate('user', 'name _id')
-    const hasMore = notes.length > limit
-    const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
+    const { processedNotes, hasMore } = await getNotes(searchQuery, sortBy)
     res.status(200).json({
       notes: processedNotes,
       hasMore,
     })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     throw error
   }
 })
 
-// @desc Get note file (PDF)
+// @desc Get note file
 // @route GET /api/notes/:id/view
 // @access Private
 const getNoteFile = asyncHandler(async (req, res) => {
@@ -130,11 +75,17 @@ const getNoteFile = asyncHandler(async (req, res) => {
       res.status(200)
       fileResponse.Body.pipe(res)
     } catch (readFileError) {
-      if (readFileError.name === 'NoSuchKey') {
+      if (
+        readFileError.name === 'NoSuchKey' ||
+        readFileError.Code === 'NoSuchKey'
+      ) {
         res.status(404)
         throw new Error('File not found')
       }
-      if (readFileError.name === 'AccessDenied') {
+      if (
+        readFileError.name === 'AccessDenied' ||
+        readFileError.Code === 'AccessDenied'
+      ) {
         throw new Error('Access denied')
       }
       throw readFileError
@@ -228,7 +179,7 @@ const uploadNotes = asyncHandler(async (req, res) => {
         throw error
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
       let message
       if (error.code === 11000) {
         message =
@@ -354,170 +305,60 @@ const updateNoteRating = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Get current user's notes, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
+// @desc Get notes uploaded by the current user, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
 // Supports cursor-based pagination
 // @route GET /api/users/me/notes
 // @access Private
 const getMyNotes = asyncHandler(async (req, res) => {
-  const cursorId = req.query.cursorId?.trim()
-  let cursorValue = req.query.cursorValue?.trim()
-  let cursorClause = {}
-
-  const validSortFields = ['createdAt', 'likes']
-  let sortBy = req.query.sortBy?.trim()
-  sortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt'
-
-  const title = req.query.title?.trim()
-  const courseCode = req.query.courseCode?.trim()
-  const academicYear = req.query.academicYear?.trim()
-  const instructor = req.query.instructor?.trim()
-
-  if (cursorId && !mongoose.Types.ObjectId.isValid(cursorId)) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
-  if ((cursorId && !cursorValue) || (!cursorId && cursorValue)) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
-  if (cursorId && cursorValue) {
-    if (sortBy === 'createdAt') {
-      if (isNaN(Date.parse(cursorValue))) {
-        res.status(400)
-        throw new Error('Bad request')
-      }
-      cursorValue = new Date(cursorValue)
-    } else {
-      if (!Number.isInteger(Number(cursorValue))) {
-        res.status(400)
-        throw new Error('Bad request')
-      }
-      cursorValue = Number(cursorValue)
+  const sortBy = getSortBy(req.query)
+  let searchQuery
+  try {
+    searchQuery = {
+      user: req.user._id,
+      ...buildSearchQuery(req.query, sortBy),
     }
-    cursorClause = {
-      $or: [
-        { [sortBy]: { $lt: cursorValue } },
-        { [sortBy]: cursorValue, _id: { $lt: cursorId } },
-      ],
-    }
+  } catch (error) {
+    res.status(400)
+    throw error
   }
-
-  const query = {
-    user: req.user._id,
-    ...(title && {
-      title: { $regex: title, $options: 'i' },
-    }),
-    ...(courseCode && {
-      courseCode: { $regex: courseCode, $options: 'i' },
-    }),
-    ...(academicYear && { academicYear }),
-    ...(instructor && {
-      instructor: { $regex: instructor, $options: 'i' },
-    }),
-    ...cursorClause,
-  }
-
-  const limit = MAX_NOTES_PER_SEARCH
 
   try {
-    const notes = await Note.find(query)
-      .sort({ [sortBy]: -1, _id: -1 })
-      .limit(limit + 1)
-      .populate('user', 'name _id')
-    const hasMore = notes.length > limit
-    const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
+    const { processedNotes, hasMore } = await getNotes(searchQuery, sortBy)
     res.status(200).json({
       notes: processedNotes,
       hasMore,
     })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     throw error
   }
 })
 
-// @desc Get notes liked by current user, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
+// @desc Get notes liked by the current user, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
 // Supports cursor-based pagination
 // @route GET /api/users/me/notes/liked
 // @access Private
 const getLikedNotes = asyncHandler(async (req, res) => {
-  const cursorId = req.query.cursorId?.trim()
-  let cursorValue = req.query.cursorValue?.trim()
-  let cursorClause = {}
-
-  const validSortFields = ['createdAt', 'likes']
-  let sortBy = req.query.sortBy?.trim()
-  sortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt'
-
-  const title = req.query.title?.trim()
-  const courseCode = req.query.courseCode?.trim()
-  const academicYear = req.query.academicYear?.trim()
-  const instructor = req.query.instructor?.trim()
-
-  if (cursorId && !mongoose.Types.ObjectId.isValid(cursorId)) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
-  if ((cursorId && !cursorValue) || (!cursorId && cursorValue)) {
-    res.status(400)
-    throw new Error('Bad request')
-  }
-
-  if (cursorId && cursorValue) {
-    if (sortBy === 'createdAt') {
-      if (isNaN(Date.parse(cursorValue))) {
-        res.status(400)
-        throw new Error('Bad request')
-      }
-      cursorValue = new Date(cursorValue)
-    } else {
-      if (!Number.isInteger(Number(cursorValue))) {
-        res.status(400)
-        throw new Error('Bad request')
-      }
-      cursorValue = Number(cursorValue)
+  const sortBy = getSortBy(req.query)
+  let searchQuery
+  try {
+    searchQuery = {
+      _id: { $in: req.user.likedNotes },
+      ...buildSearchQuery(req.query, sortBy),
     }
-    cursorClause = {
-      $or: [
-        { [sortBy]: { $lt: cursorValue } },
-        { [sortBy]: cursorValue, _id: { $lt: cursorId } },
-      ],
-    }
+  } catch (error) {
+    res.status(400)
+    throw error
   }
-
-  const query = {
-    _id: { $in: req.user.likedNotes },
-    ...(title && {
-      title: { $regex: title, $options: 'i' },
-    }),
-    ...(courseCode && {
-      courseCode: { $regex: courseCode, $options: 'i' },
-    }),
-    ...(academicYear && { academicYear }),
-    ...(instructor && {
-      instructor: { $regex: instructor, $options: 'i' },
-    }),
-    ...cursorClause,
-  }
-
-  const limit = MAX_NOTES_PER_SEARCH
 
   try {
-    const notes = await Note.find(query)
-      .sort({ [sortBy]: -1, _id: -1 })
-      .limit(limit + 1)
-      .populate('user', 'name _id')
-    const hasMore = notes.length > limit
-    const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
+    const { processedNotes, hasMore } = await getNotes(searchQuery, sortBy)
     res.status(200).json({
       notes: processedNotes,
       hasMore,
     })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     throw error
   }
 })
@@ -571,7 +412,7 @@ const updateMyNote = asyncHandler(async (req, res) => {
 
     res.status(200).json(processedNote)
   } catch (error) {
-    console.log(error)
+    console.error(error)
     throw error
   }
 })
@@ -605,17 +446,93 @@ const deleteMyNote = asyncHandler(async (req, res) => {
     res.status(204).end()
   } catch (error) {
     note
-      ? console.log(
-          `Could not delete note ${note._id.toString()} from DB`,
+      ? console.error(
+          `Could not delete note ${note._id.toString()} from DB:`,
           error
         )
-      : console.log(error)
+      : console.error(error)
     throw error
   }
 })
 
+// Helper functions
+const getSortBy = (query) => {
+  const validSortFields = ['createdAt', 'likes']
+  let sortBy = query.sortBy?.trim()
+  return validSortFields.includes(sortBy) ? sortBy : 'createdAt'
+}
+
+const buildSearchQuery = (query, sortBy) => {
+  const cursorId = query.cursorId?.trim()
+  const cursorValueRaw = query.cursorValue?.trim()
+  let cursorClause = {}
+
+  const title = query.title?.trim()
+  const courseCode = query.courseCode?.trim()
+  const academicYear = query.academicYear?.trim()
+  const instructor = query.instructor?.trim()
+
+  if (cursorId && !mongoose.Types.ObjectId.isValid(cursorId)) {
+    throw new Error('Bad request')
+  }
+
+  if ((cursorId && !cursorValueRaw) || (!cursorId && cursorValueRaw)) {
+    throw new Error('Bad request')
+  }
+
+  if (cursorId && cursorValueRaw) {
+    let cursorValueParsed
+    if (sortBy === 'createdAt') {
+      if (isNaN(Date.parse(cursorValueRaw))) {
+        throw new Error('Bad request')
+      }
+      cursorValueParsed = new Date(cursorValueRaw)
+    } else {
+      if (!Number.isInteger(Number(cursorValueRaw))) {
+        throw new Error('Bad request')
+      }
+      cursorValueParsed = Number(cursorValueRaw)
+    }
+    cursorClause = {
+      $or: [
+        { [sortBy]: { $lt: cursorValueParsed } },
+        { [sortBy]: cursorValueParsed, _id: { $lt: cursorId } },
+      ],
+    }
+  }
+
+  return {
+    ...(title && {
+      title: { $regex: escapeRegex(title), $options: 'i' },
+    }),
+    ...(courseCode && {
+      courseCode: { $regex: escapeRegex(courseCode), $options: 'i' },
+    }),
+    ...(academicYear && { academicYear }),
+    ...(instructor && {
+      instructor: { $regex: escapeRegex(instructor), $options: 'i' },
+    }),
+    ...cursorClause,
+  }
+}
+
+const getNotes = async (searchQuery, sortBy) => {
+  const limit = MAX_NOTES_PER_SEARCH
+  const notes = await Note.find(searchQuery)
+    .sort({ [sortBy]: -1, _id: -1 })
+    .limit(limit + 1)
+    .populate('user', 'name _id')
+  const hasMore = notes.length > limit
+  const processedNotes = notes.slice(0, limit).map(processNoteForDisplay)
+  return { processedNotes, hasMore }
+}
+
+const escapeRegex = (str) => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export {
-  getNotesMetadata,
+  getBrowseNotes,
   getNoteFile,
   uploadNotes,
   updateNoteRating,

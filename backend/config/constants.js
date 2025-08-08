@@ -17,3 +17,5 @@ export const MAX_RECENT_NOTES = 20
 export const MAX_LIKED_NOTES_DASHBOARD = 20
 
 export const MAX_NOTES_PER_SEARCH = 30
+
+export const RANDOM_TOKEN_LENGTH_BYTES = 32

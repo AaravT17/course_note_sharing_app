@@ -14,7 +14,8 @@ export const initS3Client = () => {
 
 export const getS3Client = () => {
   if (!s3Client) {
-    throw new Error('S3 client not initialized.')
+    console.error('S3 client not initialized.')
+    throw new Error('Something went wrong. Please try again later.')
   }
   return s3Client
 }

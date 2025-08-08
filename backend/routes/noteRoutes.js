@@ -1,7 +1,7 @@
 import express from 'express'
 import multer from 'multer'
 import {
-  getNotesMetadata,
+  getBrowseNotes,
   getNoteFile,
   uploadNotes,
   updateNoteRating,
@@ -31,7 +31,7 @@ const upload = multer({
   },
 })
 
-router.get('/', authenticateUser, getNotesMetadata)
+router.get('/', authenticateUser, getBrowseNotes)
 
 router.get('/:id/view', authenticateUser, getNoteFile)
 

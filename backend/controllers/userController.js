@@ -4,14 +4,17 @@ import asyncHandler from 'express-async-handler'
  * having to write try/catch blocks for error handling in each function
  */
 import bcrypt from 'bcryptjs'
-import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 import User from '../models/userModel.js'
 import {
   generateAccessToken,
   generateRefreshToken,
+  isValidEmail,
   isStrongPassword,
+  generateRandomToken,
   hashToken,
+  hashPassword,
   sendVerificationEmail,
   sendPasswordResetEmail,
 } from '../utils/userUtils.js'
@@ -23,6 +26,7 @@ import {
   MAX_RECENT_NOTES,
   MAX_LIKED_NOTES_DASHBOARD,
   MIN_PASSWORD_LENGTH,
+  RANDOM_TOKEN_LENGTH_BYTES,
 } from '../config/constants.js'
 
 // @desc Register user, pending verification
@@ -45,6 +49,11 @@ const registerUser = asyncHandler(async (req, res) => {
   const password = req.body.password.trim()
   const confirmPassword = req.body.confirmPassword.trim()
 
+  if (!isValidEmail(email)) {
+    res.status(400)
+    throw new Error('Invalid email address')
+  }
+
   if (password !== confirmPassword) {
     res.status(400)
     throw new Error('Passwords do not match')
@@ -53,7 +62,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!isStrongPassword(password)) {
     res.status(400)
     throw new Error(
-      `Password must be at least ${MIN_PASSWORD_LENGTH} characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character`
+      `Password must be at least ${MIN_PASSWORD_LENGTH} characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character`
     )
   }
 
@@ -62,16 +71,15 @@ const registerUser = asyncHandler(async (req, res) => {
    * the same email, MongoDB does this for us
    */
 
-  // Hash password
-  const salt = await bcrypt.genSalt(10)
-  const hashedPassword = await bcrypt.hash(password, salt)
+  // Hash the password before saving it to DB
+  const hashedPassword = await hashPassword(password)
 
-  const token = crypto.randomBytes(32).toString('hex')
+  const token = generateRandomToken(RANDOM_TOKEN_LENGTH_BYTES)
 
   const hashedToken = hashToken(token)
 
   try {
-    const user = await User.create({
+    await User.create({
       name,
       email,
       password: hashedPassword,
@@ -111,11 +119,11 @@ const verifyUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Invalid link' })
   }
 
-  if (user.verificationTokenExpiry < Date.now()) {
+  if (user.verificationTokenExpiry <= Date.now()) {
     try {
       await user.deleteOne()
     } catch (error) {
-      console.log(`Could not delete user ${user._id.toString()}`)
+      console.error(`Could not delete user ${user._id.toString()}:`, error)
     }
     return res.status(400).json({ message: 'Expired link' })
   }
@@ -127,7 +135,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     await user.save()
     return res.status(200).json({ message: 'Success' })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     return res.status(500).json({ message: 'Internal error' })
   }
 })
@@ -146,7 +154,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email })
 
-  if (!(user && (await bcrypt.compare(password, user.password)))) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     res.status(401)
     throw new Error('Invalid credentials')
   }
@@ -156,48 +164,8 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Please verify your email before logging in')
   }
 
-  /* Populate the user's recentlyViewedNotes to get the actual note objects and
-   * send those back to the client, and in the DB, update the field to store
-   * only the IDs of the notes that still exist (those that are missing from the
-   * populated list have likely been deleted)
-   */
-
-  await user.populate([
-    {
-      path: 'recentlyViewedNotes',
-      populate: { path: 'user', select: 'name _id' },
-    },
-    {
-      path: 'likedNotes',
-      populate: { path: 'user', select: 'name _id' },
-    },
-    {
-      path: 'dislikedNotes',
-      populate: { path: 'user', select: 'name _id' },
-    },
-  ])
-
-  const recentNotes = user.recentlyViewedNotes
-    .filter(Boolean)
-    .slice(0, MAX_RECENT_NOTES)
-
-  const processedRecentNotes = recentNotes.map(processNoteForDisplay)
-
-  user.recentlyViewedNotes = recentNotes.map((note) => note._id)
-
-  const likedNotes = user.likedNotes.filter(Boolean)
-
-  const processedLikedNotesDisplay = likedNotes
-    .slice(0, MAX_LIKED_NOTES_DASHBOARD)
-    .map(processNoteForDisplay)
-
-  user.likedNotes = likedNotes.map((note) => note._id)
-
-  user.dislikedNotes = user.dislikedNotes
-    .filter(Boolean)
-    .map((note) => note._id)
-
-  await user.save()
+  const { processedRecentNotes, processedLikedNotesDisplay } =
+    await populateAndSanitizeUserNotes(user)
 
   res.cookie('refreshToken', generateRefreshToken(user._id.toString()), {
     httpOnly: true,
@@ -256,7 +224,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     })
   }
 
-  const token = crypto.randomBytes(32).toString('hex')
+  const token = generateRandomToken(RANDOM_TOKEN_LENGTH_BYTES)
   user.passwordResetToken = hashToken(token)
   user.passwordResetTokenExpiry = new Date(
     Date.now() + 1000 * 60 * PASSWORD_RESET_EXPIRY_MINS
@@ -269,7 +237,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }/reset-password?token=${token}`
     await sendPasswordResetEmail(email, passwordResetLink)
   } catch (error) {
-    console.log(error)
+    console.error(error)
+    throw new Error('Failed to send password reset email')
   }
 
   res.status(200).json({
@@ -301,7 +270,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   if (!isStrongPassword(password)) {
     res.status(400)
     throw new Error(
-      `Password must be at least ${MIN_PASSWORD_LENGTH} characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character`
+      `Password must be at least ${MIN_PASSWORD_LENGTH} characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character`
     )
   }
 
@@ -319,13 +288,12 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw new Error('Invalid link')
   }
 
-  if (user.passwordResetTokenExpiry < Date.now()) {
+  if (user.passwordResetTokenExpiry <= Date.now()) {
     res.status(400)
     throw new Error('Link expired, please request a new password reset link')
   }
 
-  const salt = await bcrypt.genSalt(10)
-  const hashedPassword = await bcrypt.hash(password, salt)
+  const hashedPassword = await hashPassword(password)
 
   user.password = hashedPassword
   user.passwordResetToken = undefined
@@ -336,7 +304,7 @@ const resetPassword = asyncHandler(async (req, res) => {
       message: 'Password reset successful!',
     })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     throw error
   }
 })
@@ -365,7 +333,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       accessToken: generateAccessToken(user._id.toString()),
     })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     res.status(401)
     throw new Error('Unauthorized, please login again')
   }
@@ -375,42 +343,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 // @route GET /api/users/me
 // @access Private
 const getMe = asyncHandler(async (req, res) => {
-  await req.user.populate([
-    {
-      path: 'recentlyViewedNotes',
-      populate: { path: 'user', select: 'name _id' },
-    },
-    {
-      path: 'likedNotes',
-      populate: { path: 'user', select: 'name _id' },
-    },
-    {
-      path: 'dislikedNotes',
-      populate: { path: 'user', select: 'name _id' },
-    },
-  ])
-
-  const recentNotes = req.user.recentlyViewedNotes
-    .filter(Boolean)
-    .slice(0, MAX_RECENT_NOTES)
-
-  const processedRecentNotes = recentNotes.map(processNoteForDisplay)
-
-  req.user.recentlyViewedNotes = recentNotes.map((note) => note._id)
-
-  const likedNotes = req.user.likedNotes.filter(Boolean)
-
-  const processedLikedNotesDisplay = likedNotes
-    .slice(0, MAX_LIKED_NOTES_DASHBOARD)
-    .map(processNoteForDisplay)
-
-  req.user.likedNotes = likedNotes.map((note) => note._id)
-
-  req.user.dislikedNotes = req.user.dislikedNotes
-    .filter(Boolean)
-    .map((note) => note._id)
-
-  await req.user.save()
+  const { processedRecentNotes, processedLikedNotesDisplay } =
+    await populateAndSanitizeUserNotes(req.user)
 
   res.status(200).json({
     user: {
@@ -434,7 +368,14 @@ const updateMe = asyncHandler(async (req, res) => {
     throw new Error('Missing fields')
   }
   if (req.body.recentlyViewedNotes) {
-    // req.body.recentlyViewedNotes would be an array of note IDs
+    if (!Array.isArray(req.body.recentlyViewedNotes)) {
+      res.status(400)
+      throw new Error('Bad request')
+    }
+    if (!req.body.recentlyViewedNotes.every(mongoose.Types.ObjectId.isValid)) {
+      res.status(400)
+      throw new Error('Bad request')
+    }
     req.user.recentlyViewedNotes = req.body.recentlyViewedNotes
   }
   try {
@@ -461,7 +402,7 @@ const updateMe = asyncHandler(async (req, res) => {
       },
     })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     if (error.name === 'CastError' || error.name === 'ValidationError') {
       res.status(400)
       throw new Error('Bad request')
@@ -473,12 +414,12 @@ const updateMe = asyncHandler(async (req, res) => {
 // @desc Delete current user
 // @route DELETE /api/users/me
 // @access Private
-const deleteMe = asyncHandler(async (req, res, next) => {
+const deleteMe = asyncHandler(async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.user._id)
     if (!user) {
       res.status(404)
-      return next(new Error('User not found'))
+      throw new Error('User not found')
     }
     res.clearCookie('refreshToken', {
       httpOnly: true,
@@ -488,11 +429,60 @@ const deleteMe = asyncHandler(async (req, res, next) => {
     })
     res.status(204).end()
   } catch (error) {
-    console.log(error)
+    console.error(
+      `Failed to delete user ${req.user?._id?.toString() || 'UNKNOWN'}:`,
+      error
+    )
     if (error.name === 'CastError') res.status(400)
     throw error
   }
 })
+
+// Helper functions
+const populateAndSanitizeUserNotes = async (user) => {
+  /* Populate the user's recentlyViewedNotes, likedNotes, and dislikedNotes to
+   * get the actual note objects and send those back to the client, and in the
+   * DB, update the fields to store only the IDs of the notes that still exist
+   */
+  await user.populate([
+    {
+      path: 'recentlyViewedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+    {
+      path: 'likedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+    {
+      path: 'dislikedNotes',
+      populate: { path: 'user', select: 'name _id' },
+    },
+  ])
+
+  const recentNotes = user.recentlyViewedNotes
+    .filter(Boolean)
+    .slice(0, MAX_RECENT_NOTES)
+
+  const processedRecentNotes = recentNotes.map(processNoteForDisplay)
+
+  user.recentlyViewedNotes = recentNotes.map((note) => note._id)
+
+  const likedNotes = user.likedNotes.filter(Boolean)
+
+  const processedLikedNotesDisplay = likedNotes
+    .slice(0, MAX_LIKED_NOTES_DASHBOARD)
+    .map(processNoteForDisplay)
+
+  user.likedNotes = likedNotes.map((note) => note._id)
+
+  user.dislikedNotes = user.dislikedNotes
+    .filter(Boolean)
+    .map((note) => note._id)
+
+  await user.save()
+
+  return { processedRecentNotes, processedLikedNotesDisplay }
+}
 
 export {
   registerUser,

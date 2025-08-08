@@ -1,13 +1,18 @@
+import validator from 'validator'
 import { MIN_PASSWORD_LENGTH } from '../config/constants.js'
 
-const isStrongPassword = (password) => {
-  return (
-    password.length >= MIN_PASSWORD_LENGTH && // Is sufficiently long
-    /[A-Z]/.test(password) && // Contains at least one uppercase letter
-    /[a-z]/.test(password) && // Contains at least one lowercase letter
-    /\d/.test(password) && // Contains at least one digit
-    /[^a-zA-Z0-9]/.test(password) // Contains at least one special character
-  )
+const isValidEmail = (email) => {
+  return validator.isEmail(email)
 }
 
-export { isStrongPassword }
+const isStrongPassword = (password) => {
+  return validator.isStrongPassword(password, {
+    minLength: MIN_PASSWORD_LENGTH,
+    minUppercase: 1,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+  })
+}
+
+export { isValidEmail, isStrongPassword }

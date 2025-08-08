@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
 import { register } from '../features/user/userSlice.js'
-import { isStrongPassword } from '../utils/userUtils.js'
+import { isValidEmail, isStrongPassword } from '../utils/userUtils.js'
 import { MIN_PASSWORD_LENGTH } from '../config/constants.js'
 
 function RegisterForm() {
@@ -47,11 +47,13 @@ function RegisterForm() {
       confirmPassword.trim() === ''
     ) {
       toast.error('Please fill in all fields')
+    } else if (!isValidEmail(email.trim())) {
+      toast.error('Please enter a valid email address')
     } else if (password.trim() !== confirmPassword.trim()) {
       toast.error('Passwords do not match')
     } else if (!isStrongPassword(password.trim())) {
       toast.error(
-        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character`
+        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character`
       )
     } else {
       const userData = {

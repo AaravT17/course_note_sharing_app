@@ -3,8 +3,8 @@ import Note from '../models/noteModel.js'
 import { getS3Client } from '../config/s3.js'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
-// Helper functions for creating file names for storage and extract information
-// from files for storage in DB
+// Helper functions for creating file names for storage and extracting
+// information from files for storage in DB
 const _slugify = (title) => {
   return title
     .trim()
@@ -35,7 +35,10 @@ const deleteFile = async (note) => {
       })
     )
   } catch (error) {
-    console.log(`Could not delete file ${getS3Key(note)} from storage`, error)
+    console.error(
+      `Could not delete file ${getS3Key(note)} from storage:`,
+      error
+    )
   }
 }
 
@@ -43,7 +46,10 @@ const deleteNote = async (note) => {
   try {
     await Note.findByIdAndDelete(note._id)
   } catch (error) {
-    console.log(`Could not delete note ${note._id.toString()} from DB`, error)
+    console.error(
+      `Could not delete note ${note._id.toString()} from DB:`,
+      error
+    )
   }
 }
 

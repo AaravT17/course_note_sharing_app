@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import bcrypt from 'bcryptjs'
+import validator from 'validator'
 import { Resend } from 'resend'
 import {
   ACCESS_TOKEN_EXPIRY_MINS,
@@ -19,18 +21,31 @@ const generateRefreshToken = (id) => {
   })
 }
 
+const isValidEmail = (email) => {
+  return validator.isEmail(email)
+}
+
 const isStrongPassword = (password) => {
-  return (
-    password.length >= MIN_PASSWORD_LENGTH && // Is sufficiently long
-    /[A-Z]/.test(password) && // Contains at least one uppercase letter
-    /[a-z]/.test(password) && // Contains at least one lowercase letter
-    /\d/.test(password) && // Contains at least one digit
-    /[^a-zA-Z0-9]/.test(password) // Contains at least one special character
-  )
+  return validator.isStrongPassword(password, {
+    minLength: MIN_PASSWORD_LENGTH,
+    minUppercase: 1,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+  })
+}
+
+const generateRandomToken = (length) => {
+  return crypto.randomBytes(length).toString('hex')
 }
 
 const hashToken = (token) => {
   return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10)
+  return await bcrypt.hash(password, salt)
 }
 
 const sendVerificationEmail = async (toEmail, verificationLink) => {
@@ -47,8 +62,6 @@ const sendVerificationEmail = async (toEmail, verificationLink) => {
     console.error('Error sending verification email:', error)
     throw new Error('Failed to send verification email')
   }
-
-  console.log('Verification email sent successfully')
 }
 
 const sendPasswordResetEmail = async (toEmail, passwordResetLink) => {
@@ -65,15 +78,16 @@ const sendPasswordResetEmail = async (toEmail, passwordResetLink) => {
     console.error('Error sending password reset email:', error)
     throw new Error('Failed to send password reset email')
   }
-
-  console.log('Password reset email sent successfully')
 }
 
 export {
   generateAccessToken,
   generateRefreshToken,
+  isValidEmail,
   isStrongPassword,
+  generateRandomToken,
   hashToken,
+  hashPassword,
   sendVerificationEmail,
   sendPasswordResetEmail,
 }
