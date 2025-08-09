@@ -200,7 +200,7 @@ const uploadNotes = asyncHandler(async (req, res) => {
 // @route PATCH /api/notes/:id/rating
 // @access Private
 const updateNoteRating = asyncHandler(async (req, res) => {
-  if (!req.body || (!req.body.likes && !req.body.dislikes)) {
+  if (!req.body || (!req.body.likes?.trim() && !req.body.dislikes?.trim())) {
     res.status(400)
     throw new Error('Bad request')
   }
@@ -441,7 +441,8 @@ const deleteMyNote = asyncHandler(async (req, res) => {
     await note.deleteOne()
 
     // This order of deletion ensures both are attemped, regardless
-    // of whether the other fails
+    // of whether the other fails (deleteFile does not throw an error, it
+    // catches and logs it)
 
     res.status(204).end()
   } catch (error) {
