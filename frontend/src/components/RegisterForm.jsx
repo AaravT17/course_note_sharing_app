@@ -21,9 +21,7 @@ function RegisterForm() {
 
   const dispatch = useDispatch()
 
-  const { user, isError, isSuccess, isLoading, message } = useSelector(
-    (state) => state.user
-  )
+  const { isLoading } = useSelector((state) => state.user)
 
   const handleChange = (e) => {
     setFormData((prevState) => {
@@ -39,12 +37,11 @@ function RegisterForm() {
 
   const handleRegister = (e) => {
     e.preventDefault()
-    const { name, email, password, confirmPassword } = formData
     if (
-      name.trim() === '' ||
-      email.trim() === '' ||
-      password.trim() === '' ||
-      confirmPassword.trim() === ''
+      !name.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim()
     ) {
       toast.error('Please fill in all fields')
     } else if (!isValidEmail(email.trim())) {

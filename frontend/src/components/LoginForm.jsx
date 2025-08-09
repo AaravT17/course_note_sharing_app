@@ -16,9 +16,7 @@ function LoginForm() {
 
   const dispatch = useDispatch()
 
-  const { user, isError, isSuccess, isLoading, message } = useSelector(
-    (state) => state.user
-  )
+  const { isLoading } = useSelector((state) => state.user)
 
   const handleChange = (e) => {
     setFormData((prevState) => {
@@ -34,8 +32,7 @@ function LoginForm() {
 
   const handleLogin = (e) => {
     e.preventDefault()
-    const { email, password } = formData
-    if (email.trim() === '' || password.trim() === '') {
+    if (!email.trim() || !password.trim()) {
       toast.error('Please fill in all fields')
     } else {
       const userData = {

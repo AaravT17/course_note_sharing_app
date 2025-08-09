@@ -46,12 +46,12 @@ function NotesGrid({
     try {
       const response = await axiosPrivate.get(apiRoute, {
         params: {
-          ...(title.trim() !== '' && { title: title.trim() }),
-          ...(courseCode.trim() !== '' && { courseCode: courseCode.trim() }),
-          ...(academicYear.trim() !== '' && {
+          ...(title.trim() && { title: title.trim() }),
+          ...(courseCode.trim() && { courseCode: courseCode.trim() }),
+          ...(academicYear.trim() && {
             academicYear: academicYear.trim(),
           }),
-          ...(instructor.trim() !== '' && { instructor: instructor.trim() }),
+          ...(instructor.trim() && { instructor: instructor.trim() }),
           sortBy,
           cursorId: cursor._id.toString(),
           cursorValue:
