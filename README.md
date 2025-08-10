@@ -9,6 +9,7 @@ A reliable, secure platform for students to share and explore university course 
 - [Features](#features)
   - [For Students](#for-students)
   - [Technical Highlights](#technical-highlights)
+- [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -54,6 +55,15 @@ A reliable, secure platform for students to share and explore university course 
 - Uploads marked as anonymous are displayed anonymously to other users, but uploader identities are securely retained in the backend database for moderation and accountability.
 - All backend and hosting services currently run on free-tier plans, which may result in occasional downtime, slower response times, or other service limitations.
 - The scheduled cleanup cron job may be unreliable on the free Render tier, as the server can enter sleep mode when idle, preventing scheduled tasks from running on time.
+
+## Tech Stack
+
+- **Frontend:** React, Redux Toolkit, Tailwind CSS, Vite
+- **Backend:** Node.js, Express, MongoDB Atlas, Mongoose
+- **Authentication & Security:** JWT, HTTP-only cookies, bcryptjs
+- **File Storage:** AWS S3
+- **Email Services:** Resend (SPF, DKIM, DMARC configured)
+- **Deployment & Hosting:** Render (single-server deployment), custom domain with HTTPS (`noteablapp.com`)
 
 ## Getting Started
 
