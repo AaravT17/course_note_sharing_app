@@ -71,10 +71,16 @@ const processNoteForDisplay = (note) => {
   return note.toObject()
 }
 
+// Helper function to escape special regex characters in search strings
+const escapeRegex = (str) => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export {
   getS3Key,
   getTitle,
   deleteFile,
   deleteFileAndNote,
   processNoteForDisplay,
+  escapeRegex,
 }
