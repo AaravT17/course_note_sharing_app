@@ -51,5 +51,15 @@ const noteSchema = new mongoose.Schema(
 
 noteSchema.index({ createdAt: -1, _id: -1 })
 noteSchema.index({ likes: -1, _id: -1 })
+noteSchema.index(
+  {
+    user: 1,
+    title: 1,
+    courseCode: 1,
+    academicYear: 1,
+    instructor: 1,
+  },
+  { unique: true }
+)
 
 export default mongoose.model('Note', noteSchema)

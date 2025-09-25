@@ -5,21 +5,27 @@ import asyncHandler from 'express-async-handler'
  */
 import { v4 as uuidv4 } from 'uuid'
 import Note from '../models/noteModel.js'
+import User from '../models/userModel.js'
 import { getS3Client } from '../config/s3.js'
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import {
   getS3Key,
   getTitle,
-  deleteFile,
-  deleteFileAndNote,
   processNoteForDisplay,
 } from '../utils/noteUtils.js'
-import { MAX_LIKED_NOTES_DASHBOARD } from '../config/constants.js'
+import {
+  MAX_LIKED_NOTES_DASHBOARD,
+  MAX_RETRIES_TRANSACTIONS,
+} from '../config/constants.js'
 import {
   getSortBy,
   buildSearchQuery,
   getNotes,
+  deleteFile,
+  deleteNote,
+  deleteFileAndNote,
 } from '../services/noteServices.js'
+import mongoose from 'mongoose'
 
 // @desc Get notes uploaded by other users, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
 // Supports cursor-based pagination
@@ -96,7 +102,7 @@ const getNoteFile = asyncHandler(async (req, res) => {
     if (error.message === 'File not found') {
       message = 'File not found'
     }
-    throw new Error(message || 'Failed to retrieve file from storage')
+    throw new Error(message || 'Failed to retrieve file')
   }
 })
 
@@ -105,7 +111,8 @@ const getNoteFile = asyncHandler(async (req, res) => {
 // @access Private
 const uploadNotes = asyncHandler(async (req, res) => {
   /* This will run after multer middleware (if no error occurs), which will
-   * parse form data and set req.body and req.files, req.files will be an array of files, and the files' content will be in a buffer in memory
+   * parse form data and set req.body and req.files, req.files will be an array
+   * of files, and the files' content will be in a buffer in memory
    */
   if (!req.files || req.files.length === 0) {
     res.status(400)
@@ -117,21 +124,6 @@ const uploadNotes = asyncHandler(async (req, res) => {
   const instructor = req.body.instructor?.trim()
   const isAnonymous = req.body.isAnonymous?.trim()
 
-  const existingNote = await Note.findOne({
-    user: req.user._id,
-    courseCode,
-    academicYear,
-    ...(instructor && { instructor }),
-    title: { $in: req.files.map((file) => getTitle(file.originalname)) },
-  })
-
-  if (existingNote) {
-    res.status(409)
-    throw new Error(
-      'You have already uploaded a note with the same title for this course'
-    )
-  }
-
   const s3Client = getS3Client()
 
   let savedNotes = []
@@ -139,59 +131,49 @@ const uploadNotes = asyncHandler(async (req, res) => {
   for (const file of req.files) {
     const title = getTitle(file.originalname)
     const uuid = uuidv4()
+    let note
     try {
       try {
+        note = await Note.create({
+          user: req.user._id,
+          title,
+          courseCode,
+          academicYear,
+          ...(instructor && { instructor }),
+          isAnonymous: isAnonymous === 'true',
+          uuid,
+        })
+      } catch (dbUploadError) {
+        if (dbUploadError.code === 11000 && !dbUploadError.keyPattern?.uuid) {
+          // Duplicate key error, a note with the same metadata already exists
+          res.status(409)
+          throw new Error(
+            'Duplicate note: you have already uploaded a note with the same title, course code, academic year, and instructor'
+          )
+        } else {
+          console.error(dbUploadError)
+          throw new Error('Something went wrong, please try again later')
+        }
+      }
+      try {
+        // Note has been saved to DB, now upload file to S3
         await s3Client.send(
           new PutObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET,
-            Key: getS3Key({
-              user: req.user._id,
-              title,
-              uuid,
-            }),
+            Key: getS3Key(note),
             Body: file.buffer,
             ContentType: file.mimetype,
           })
         )
-      } catch (s3UploadError) {
-        throw new Error('Failed to upload file to storage')
-      }
-      try {
-        const note = await Note.create({
-          user: req.user._id,
-          courseCode,
-          academicYear,
-          ...(instructor && { instructor }),
-          title,
-          isAnonymous: isAnonymous === 'true',
-          uuid,
-        })
         savedNotes.push(note)
-      } catch (dbUploadError) {
-        await deleteFile({
-          user: req.user._id,
-          title,
-          uuid,
-        })
-        const error = new Error('Failed to save note to DB')
-        if (dbUploadError.code === 11000) {
-          error.code = 11000
-        }
-        throw error
+      } catch (s3UploadError) {
+        console.error(s3UploadError)
+        await deleteNote(note)
+        throw new Error('Something went wrong, please try again later')
       }
     } catch (error) {
-      console.error(error)
-      let message
-      if (error.code === 11000) {
-        message =
-          'Something went wrong while uploading your notes, please try again'
-      }
       await Promise.allSettled(savedNotes.map(deleteFileAndNote))
-      if (message) {
-        throw new Error(message)
-      } else {
-        throw error
-      }
+      throw error
     }
   }
   res.status(201).json(savedNotes)
@@ -205,105 +187,132 @@ const updateNoteRating = asyncHandler(async (req, res) => {
     res.status(400)
     throw new Error('Bad request')
   }
+  // Use a transaction to ensure that both the Note and User documents are
+  // updated atomically. This prevents race conditions from causing incorrect/
+  // inconsistent state, e.g. a user liking the same note twice, or a note's
+  // likes/dislikes count being incorrect due to concurrent updates. Wrap in
+  // a loop to automatically retry if a TransientTransactionError or
+  // UnknownTransactionCommitResult occurs
+  let updatedUser
+  let updatedNote
+  let session
+  let i
+  for (i = 0; i < MAX_RETRIES_TRANSACTIONS; i++) {
+    try {
+      session = await mongoose.startSession()
+      session.startTransaction()
+    } catch (error) {
+      console.error('Could not start transaction session:', error)
+      throw new Error('Something went wrong, please try again later')
+    }
 
-  const note = await Note.findById(req.params.id)
+    try {
+      // Refetch user inside the transaction session
+      const user = await User.findById(req.user._id).session(session)
+      if (!user) {
+        throw new Error('User not found')
+      }
 
-  if (!note) {
-    res.status(404)
-    throw new Error('Note not found')
+      const note = await Note.findById(req.params.id).session(session)
+      if (!note) {
+        throw new Error('Note not found')
+      }
+
+      const likes = req.body.likes?.trim()
+      const dislikes = req.body.dislikes?.trim()
+
+      if (likes === '+' && !user.likedNotes.includes(note._id)) {
+        note.likes += 1
+        user.likedNotes = [
+          note._id,
+          ...user.likedNotes.filter(
+            (id) => id.toString() !== note._id.toString()
+          ),
+        ]
+      } else if (
+        likes === '-' &&
+        note.likes > 0 &&
+        user.likedNotes.includes(note._id)
+      ) {
+        note.likes -= 1
+        user.likedNotes = user.likedNotes.filter(
+          (id) => id.toString() !== note._id.toString()
+        )
+      }
+
+      if (dislikes === '+' && !user.dislikedNotes.includes(note._id)) {
+        note.dislikes += 1
+        user.dislikedNotes = [
+          note._id,
+          ...user.dislikedNotes.filter(
+            (id) => id.toString() !== note._id.toString()
+          ),
+        ]
+      } else if (
+        dislikes === '-' &&
+        note.dislikes > 0 &&
+        user.dislikedNotes.includes(note._id)
+      ) {
+        note.dislikes -= 1
+        user.dislikedNotes = user.dislikedNotes.filter(
+          (id) => id.toString() !== note._id.toString()
+        )
+      }
+
+      updatedNote = await note.save({ session })
+      updatedUser = await user.save({ session })
+
+      await session.commitTransaction()
+      break
+    } catch (error) {
+      await session.abortTransaction()
+      if (
+        !(
+          error.errorLabels?.includes('TransientTransactionError') ||
+          error.errorLabels?.includes('UnknownTransactionCommitResult')
+        )
+      ) {
+        console.error(error)
+        if (error.message === 'Note not found') {
+          res.status(404)
+          throw error
+        }
+        throw new Error('Something went wrong, please try again later')
+      }
+    } finally {
+      session.endSession()
+    }
   }
 
-  const likes = req.body.likes?.trim()
-  const dislikes = req.body.dislikes?.trim()
-
-  const prevLikes = note.likes
-  const prevDislikes = note.dislikes
-  const userPrevLikedNotes = req.user.likedNotes || []
-  const userPrevDislikedNotes = req.user.dislikedNotes || []
-
-  if (likes === '+') {
-    note.likes += 1
-    req.user.likedNotes = [
-      note._id,
-      ...req.user.likedNotes.filter(
-        (id) => id.toString() !== note._id.toString()
-      ),
-    ]
-  } else if (likes === '-' && note.likes > 0) {
-    note.likes -= 1
-    req.user.likedNotes = req.user.likedNotes.filter(
-      (id) => id.toString() !== note._id.toString()
-    )
-  }
-  if (dislikes === '+') {
-    note.dislikes += 1
-    req.user.dislikedNotes = [
-      note._id,
-      ...req.user.dislikedNotes.filter(
-        (id) => id.toString() !== note._id.toString()
-      ),
-    ]
-  } else if (dislikes === '-' && note.dislikes > 0) {
-    note.dislikes -= 1
-    req.user.dislikedNotes = req.user.dislikedNotes.filter(
-      (id) => id.toString() !== note._id.toString()
-    )
+  if (i === MAX_RETRIES_TRANSACTIONS) {
+    res.status(503)
+    throw new Error('Something went wrong, please try again later')
   }
 
   try {
-    let updatedUser
-    let updatedNote
-    await req.user.populate({
+    await updatedUser.populate({
       path: 'likedNotes',
       populate: { path: 'user', select: 'name _id' },
     })
-    const likedNotes = req.user.likedNotes.filter(Boolean)
-    const likedNotesDisplay = likedNotes
-      .slice(0, MAX_LIKED_NOTES_DASHBOARD)
-      .map(processNoteForDisplay)
-      .map((likedNote) =>
-        likedNote._id.toString() === note._id.toString()
-          ? { ...likedNote, likes: note.likes, dislikes: note.dislikes }
-          : likedNote
-      )
-    // Here, it is important that processNoteForDisplay is called first,
-    // processNoteForDisplay only works reliably on Mongoose documents
-    req.user.likedNotes = likedNotes.map((note) => note._id)
-    try {
-      updatedUser = await req.user.save()
-    } catch (userSaveError) {
-      throw new Error('USER_SAVE_ERROR')
-    }
-    try {
-      updatedNote = await note.save()
-    } catch (noteSaveError) {
-      throw new Error('NOTE_SAVE_ERROR')
-    }
-    res.status(200).json({
-      likes: updatedNote.likes,
-      dislikes: updatedNote.dislikes,
-      likedNotesDisplay,
-      likedNotes: updatedUser.likedNotes,
-      dislikedNotes: updatedUser.dislikedNotes,
-    })
   } catch (error) {
-    if (error.message === 'USER_SAVE_ERROR') {
-      note.likes = prevLikes
-      note.dislikes = prevDislikes
-      try {
-        await note.save()
-      } catch (_) {}
-    } else if (error.message === 'NOTE_SAVE_ERROR') {
-      req.user.likedNotes = userPrevLikedNotes
-      req.user.dislikedNotes = userPrevDislikedNotes
-      try {
-        await req.user.save()
-      } catch (_) {}
-    }
-    throw new Error(
-      "Failed to update note's likes and dislikes, please try again"
-    )
+    console.error(error)
+    throw new Error('Something went wrong, please try again later')
   }
+
+  const likedNotes = updatedUser.likedNotes.filter(Boolean)
+  const likedNotesDisplay = likedNotes
+    .slice(0, MAX_LIKED_NOTES_DASHBOARD)
+    .map(processNoteForDisplay)
+
+  updatedUser.likedNotes = likedNotes.map((note) => note._id)
+
+  res.status(200).json({
+    likes: updatedNote.likes,
+    dislikes: updatedNote.dislikes,
+    likedNotesDisplay,
+    likedNotes: updatedUser.likedNotes,
+    dislikedNotes: updatedUser.dislikedNotes,
+  })
 })
 
 // @desc Get notes uploaded by the current user, optionally search/filter by title, course code, academic year, and instructor, and sort by recency or likes
@@ -368,53 +377,60 @@ const getLikedNotes = asyncHandler(async (req, res) => {
 // @route PATCH /api/users/me/notes/:id
 // @access Private
 const updateMyNote = asyncHandler(async (req, res) => {
+  const courseCode = req.body.courseCode?.trim()
+  const academicYear = req.body.academicYear?.trim()
+  const instructor = req.body.instructor?.trim()
+
+  if (!courseCode || !academicYear) {
+    res.status(400)
+    throw new Error('Please fill in all required fields')
+  }
+
+  const update = {
+    $set: {
+      courseCode: courseCode.toUpperCase(),
+      academicYear,
+      ...(typeof req.body.isAnonymous === 'boolean'
+        ? { isAnonymous: req.body.isAnonymous }
+        : {}),
+    },
+    $unset: {},
+  }
+
+  if (instructor) {
+    update.$set.instructor = instructor
+  } else {
+    update.$unset.instructor = 1
+  }
+
+  let note
   try {
-    const courseCode = req.body.courseCode?.trim()
-    const academicYear = req.body.academicYear?.trim()
-    const instructor = req.body.instructor?.trim()
-
-    if (!courseCode || !academicYear) {
-      res.status(400)
-      throw new Error('Please fill in all required fields')
-    }
-
-    const note = await Note.findById(req.params.id).populate('user', 'name _id')
-
-    if (!note) {
-      res.status(404)
-      throw new Error('Note not found')
-    }
-
-    if (!note.user) {
-      res.status(500)
-      throw new Error('Something went wrong, please try again')
-    }
-
-    if (!note.user._id.equals(req.user._id)) {
-      res.status(403)
-      throw new Error('Forbidden, you can only update your own notes')
-    }
-
-    note.courseCode = courseCode.toUpperCase()
-    note.academicYear = academicYear
-    if (instructor) {
-      note.instructor = instructor
-    } else {
-      note.instructor = undefined
-    }
-    if (typeof req.body.isAnonymous === 'boolean')
-      note.isAnonymous = req.body.isAnonymous
-
-    const processedNote = processNoteForDisplay(note)
-
-    note.user = note.user._id
-
-    await note.save()
-
-    res.status(200).json(processedNote)
+    note = await Note.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        user: req.user._id,
+      },
+      update,
+      { upsert: false, new: true }
+    ).populate('user', 'name _id')
   } catch (error) {
-    console.error(error)
-    throw error
+    if (error.code === 11000) {
+      res.status(409)
+      throw new Error(
+        'Duplicate note: you have already uploaded a note with the same title, course code, academic year, and instructor'
+      )
+    } else {
+      console.error(error)
+      throw error
+    }
+  }
+
+  if (note) {
+    const processedNote = processNoteForDisplay(note)
+    return res.status(200).json(processedNote)
+  } else {
+    res.status(404)
+    throw new Error('Note not found')
   }
 })
 
@@ -423,18 +439,15 @@ const updateMyNote = asyncHandler(async (req, res) => {
 // @access Private
 const deleteMyNote = asyncHandler(async (req, res) => {
   let note
-
   try {
-    note = await Note.findById(req.params.id)
+    note = await Note.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    })
 
     if (!note) {
       res.status(404)
       throw new Error('Note not found')
-    }
-
-    if (!note.user.equals(req.user._id)) {
-      res.status(403)
-      throw new Error('Forbidden, you can only delete your own notes')
     }
 
     await deleteFile(note) // This will catch and log any error that occurs

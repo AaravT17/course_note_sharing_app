@@ -1,7 +1,13 @@
 import mongoose from 'mongoose'
 import Note from '../models/noteModel.js'
-import { processNoteForDisplay, escapeRegex } from '../utils/noteUtils.js'
+import {
+  getS3Key,
+  processNoteForDisplay,
+  escapeRegex,
+} from '../utils/noteUtils.js'
 import { MAX_NOTES_PER_SEARCH } from '../config/constants.js'
+import { getS3Client } from '../config/s3.js'
+import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 const getSortBy = (query) => {
   const validSortFields = ['createdAt', 'likes']
@@ -74,4 +80,43 @@ const getNotes = async (searchQuery, sortBy) => {
   return { processedNotes, hasMore }
 }
 
-export { getSortBy, buildSearchQuery, getNotes }
+const deleteFile = async (note) => {
+  const s3Client = getS3Client()
+  try {
+    await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: getS3Key(note),
+      })
+    )
+  } catch (error) {
+    console.error(
+      `Could not delete file ${getS3Key(note)} from storage:`,
+      error
+    )
+  }
+}
+
+const deleteNote = async (note) => {
+  try {
+    await Note.findByIdAndDelete(note._id)
+  } catch (error) {
+    console.error(
+      `Could not delete note ${note._id.toString()} from DB:`,
+      error
+    )
+  }
+}
+
+const deleteFileAndNote = async (note) => {
+  await Promise.allSettled([deleteFile(note), deleteNote(note)])
+}
+
+export {
+  getSortBy,
+  buildSearchQuery,
+  getNotes,
+  deleteFile,
+  deleteNote,
+  deleteFileAndNote,
+}

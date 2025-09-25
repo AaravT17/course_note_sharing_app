@@ -19,3 +19,5 @@ export const MAX_LIKED_NOTES_DASHBOARD = 20
 export const MAX_NOTES_PER_SEARCH = 20
 
 export const RANDOM_TOKEN_LENGTH_BYTES = 32
+
+export const MAX_RETRIES_TRANSACTIONS = 5
