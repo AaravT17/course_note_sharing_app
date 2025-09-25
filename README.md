@@ -39,6 +39,7 @@ A reliable, secure platform for students to share and explore university course 
 - 🧱 Modular backend built with **Node.js**, **Express**, and **MongoDB**
 - ☁️ Secure file uploads stored on **AWS S3**, with unique naming and automatic cleanup
 - 🔄 Robust upload failure handling with rollback to maintain data integrity
+- 🛡️ Concurrency-safe design that uses atomic operations and transactions with automatic retries for transient errors to prevent race conditions and ensure consistent state under concurrent requests
 - 🔑 Secure authentication using short-lived JWT access tokens paired with HTTP-only refresh tokens for seamless and secure session management
 - 🔒 Email verification and password reset flows secured by hashed tokens with expiration
 - ⚙️ Efficient cursor-based pagination with compound sorting by creation date or likes
