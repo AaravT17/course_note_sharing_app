@@ -42,12 +42,13 @@ A reliable, secure platform for students to share and explore university course 
 - 🛡️ Concurrency-safe design that uses atomic operations and transactions with automatic retries for transient errors to prevent race conditions and ensure consistent state under concurrent requests
 - 🔑 Secure authentication using short-lived JWT access tokens paired with HTTP-only refresh tokens for seamless and secure session management
 - 🔒 Email verification and password reset flows secured by hashed tokens with expiration
+- ♻️ Consistent error handling implemented through custom middleware and `express-async-handler`
 - ⚙️ Efficient cursor-based pagination with compound sorting by creation date or likes
 - 🧠 Optimized database queries using compound indexes for fast filtering and sorting
 - 🧹 Scheduled cleanup of unverified users via a cron job to maintain database hygiene
 - 📬 Email delivery managed through **Resend**, with domain verification for reliability
 - 🌐 Deployed on **Render** with HTTPS and a custom domain (`noteablapp.com`)
-- ♻️ Consistent error handling implemented through custom middleware and `express-async-handler`
+- 🚀 CI/CD pipeline to automate builds and deployments
 
 ### 📌 Notes
 
